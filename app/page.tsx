@@ -1,149 +1,58 @@
-'use client';
-
-import React from 'react';
-
-const pageStyle: React.CSSProperties = {
-  minHeight: '100vh',
-  background: '#001A33',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '24px 16px',
-  color: '#FFFFFF',
-  fontFamily:
-    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-};
-
-const logoAreaStyle: React.CSSProperties = {
-  textAlign: 'center',
-  marginBottom: '32px',
-};
-
-const logoTitleStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '24px',
-  letterSpacing: '0.18em',
-  fontWeight: 600,
-};
-
-const logoSubtitleStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '11px',
-  letterSpacing: '0.24em',
-  textTransform: 'uppercase',
-  opacity: 0.8,
-  marginTop: '4px',
-};
-
-const cardStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: '420px',
-  background: '#F6F6F8',
-  color: '#001A33',
-  borderRadius: '30px',
-  padding: '26px 24px 24px',
-  boxShadow: '0 22px 40px rgba(0, 0, 0, 0.35)',
-};
-
-const cardTitleStyle: React.CSSProperties = {
-  fontSize: '20px',
-  fontWeight: 600,
-  marginBottom: '6px',
-};
-
-const cardSubtitleStyle: React.CSSProperties = {
-  fontSize: '14px',
-  color: '#6B7485',
-  marginBottom: '24px',
-};
-
-const buttonsColumnStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-  marginBottom: '18px',
-};
-
-const baseButtonStyle: React.CSSProperties = {
-  width: '100%',
-  borderRadius: '999px',
-  padding: '13px 18px',
-  fontSize: '15px',
-  fontWeight: 500,
-  display: 'block',
-  textAlign: 'center',
-  textDecoration: 'none',
-  cursor: 'pointer',
-  border: 'none',
-  boxSizing: 'border-box',
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-  ...baseButtonStyle,
-  background: '#001A33',
-  color: '#FFFFFF',
-};
-
-const secondaryButtonStyle: React.CSSProperties = {
-  ...baseButtonStyle,
-  background: '#FFFFFF',
-  color: '#001A33',
-  border: '1px solid rgba(0, 26, 51, 0.1)',
-};
-
-const ghostButtonStyle: React.CSSProperties = {
-  ...baseButtonStyle,
-  marginTop: '4px',
-  background: 'transparent',
-  color: '#7B8291',
-};
-
-function LinkButton(props: {
-  href: string;
-  style: React.CSSProperties;
-  children: React.ReactNode;
-}) {
-  return (
-    <a href={props.href} style={props.style}>
-      {props.children}
-    </a>
-  );
-}
-
-export default function Home() {
-  // Chemin relatif : /proxy/3000/dashboard depuis la page actuelle
-  const dashboardHref = 'dashboard';
+export default function DashboardPage() {
+  const today = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
   return (
-    <main style={pageStyle}>
-      <div style={logoAreaStyle}>
-        <span style={logoTitleStyle}>CAVALIER</span>
-        <span style={logoSubtitleStyle}>BLEU</span>
+    <div className="cb-dashboard">
+      <div className="cb-dashboard__header">
+        <h2 className="cb-dashboard__title">Tableau de bord</h2>
+        <p className="cb-dashboard__subtitle">
+          {today} — Vue d’ensemble du service au Cavalier Bleu.
+        </p>
       </div>
 
-      <section style={cardStyle}>
-        <h1 style={cardTitleStyle}>Connexion</h1>
-        <p style={cardSubtitleStyle}>Qui êtes-vous&nbsp;?</p>
+      <div className="cb-dashboard__grid">
+        <section className="cb-card">
+          <h3 className="cb-card__title">Service du jour</h3>
+          <p className="cb-card__subtitle">
+            Planning, présence et demandes de l’équipe.
+          </p>
 
-        <div style={buttonsColumnStyle}>
-          <LinkButton href={dashboardHref} style={primaryButtonStyle}>
-            Patron
-          </LinkButton>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+            <li>✔ Vérifier le planning des serveurs et de la cuisine</li>
+            <li>✔ Contrôler les arrivées / départs (présence)</li>
+            <li>✔ Traiter les demandes de congés / retards</li>
+            <li>✔ Suivre les réservations du service</li>
+          </ul>
+        </section>
 
-          <LinkButton href={dashboardHref} style={secondaryButtonStyle}>
-            Responsable
-          </LinkButton>
+        <section className="cb-card">
+          <h3 className="cb-card__title">Raccourcis rapides</h3>
+          <p className="cb-card__subtitle">Accès direct aux pages clés.</p>
 
-          <LinkButton href={dashboardHref} style={secondaryButtonStyle}>
-            Invité
-          </LinkButton>
-        </div>
-
-        <LinkButton href={dashboardHref} style={ghostButtonStyle}>
-          Accès visiteur
-        </LinkButton>
-      </section>
-    </main>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <a href="/planning" className="cb-nav-item">
+              <span className="cb-nav-item__icon">📅</span>
+              <span className="cb-nav-item__label">Voir le planning</span>
+            </a>
+            <a href="/presence" className="cb-nav-item">
+              <span className="cb-nav-item__icon">🕒</span>
+              <span className="cb-nav-item__label">Feuilles de présence</span>
+            </a>
+            <a href="/demandes" className="cb-nav-item">
+              <span className="cb-nav-item__icon">📨</span>
+              <span className="cb-nav-item__label">Demandes d’employés</span>
+            </a>
+            <a href="/depenses" className="cb-nav-item">
+              <span className="cb-nav-item__icon">💶</span>
+              <span className="cb-nav-item__label">Dépenses & factures</span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }

@@ -1,564 +1,257 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import {
-  EmployeeRequest,
-  loadRequests,
-  saveRequests,
-} from '@/app/_data/requests';
-import { loadEmployees } from '@/app/_data/employees';
-const navPages = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Planning', href: '/planning' },
-  { label: 'Employés', href: '/employes' },
-  { label: 'Présences', href: '/presences' },
-  { label: 'Réservations', href: '/reservations' },
-  { label: 'Dépenses', href: '/depenses' },
-  { label: 'Demandes', href: '/demandes' },
-];
+import { useEffect, useState, FormEvent } from "react";
 
-type DemandeType = 'retard' | 'conge' | 'absence';
+type RequestType = "retard" | "conge" | "absence";
 
-const rootStyle: React.CSSProperties = {
-  minHeight: '100vh',
-  display: 'flex',
-  justifyContent: 'center',
-  padding: '20px 12px',
-  boxSizing: 'border-box',
-  fontFamily:
-    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+type EmployeeRequest = {
+  id: string;
+  employeeName: string;
+  type: RequestType;
+  date: string;
+  heure?: string;
+  message?: string;
+  treated: boolean;
+  createdAt: string;
 };
 
-const cardStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: 480,
-  background: '#F4F6F8',
-  borderRadius: 22,
-  boxShadow: '0 18px 36px rgba(0,0,0,0.35)',
-  padding: '18px 18px 24px',
-  boxSizing: 'border-box',
-};
-
-const typeButtonBase: React.CSSProperties = {
-  flex: 1,
-  borderRadius: 14,
-  border: '1px solid #d1d5db',
-  padding: '10px 10px',
-  fontSize: 13,
-  background: '#FFFFFF',
-  cursor: 'pointer',
-  textAlign: 'left' as const,
-  boxShadow: '0 8px 18px rgba(0,0,0,0.08)',
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  borderRadius: 10,
-  border: '1px solid #d1d5db',
-  padding: '7px 9px',
-  fontSize: 13,
-  boxSizing: 'border-box',
-  background: '#FFFFFF',
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 12,
-  color: '#4b5563',
-  marginBottom: 4,
-};
-
-const smallTag: React.CSSProperties = {
-  display: 'inline-block',
-  fontSize: 11,
-  borderRadius: 999,
-  padding: '2px 7px',
-  background: '#e5e7eb',
-  color: '#374151',
-};
+const STORAGE_KEY = "cb-employee-requests-v1";
 
 export default function DemandesPage() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+  const [requests, setRequests] = useState<EmployeeRequest[]>([]);
+  const [employeeName, setEmployeeName] = useState("");
+  const [type, setType] = useState<RequestType>("retard");
+  const [date, setDate] = useState("");
+  const [heure, setHeure] = useState("");
+  const [message, setMessage] = useState("");
 
-  const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(
-    null,
-  );
-  const [currentEmployeeName, setCurrentEmployeeName] = useState<string>('—');
-
-  const [type, setType] = useState<DemandeType | null>(null);
-  const [date, setDate] = useState('');
-  const [heure, setHeure] = useState('');
-  const [message, setMessage] = useState('');
-  const [sending, setSending] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  const [myRequests, setMyRequests] = useState<EmployeeRequest[]>([]);
-
-  // Init responsivité + "user connecté" (pour l'instant simplifié)
+  // Charger depuis localStorage
   useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', onResize);
-
-    // ---- ICI : futur login / authentification ----
-    // Pour l'instant on prend le 1er employé de la liste comme "connecté"
-    const employees = loadEmployees();
-    if (employees.length > 0) {
-      const emp = employees[0];
-      setCurrentEmployeeId(emp.id);
-      setCurrentEmployeeName(emp.nom);
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as EmployeeRequest[];
+      setRequests(parsed);
+    } catch (e) {
+      console.error("Erreur de chargement des demandes", e);
     }
-
-    // Charger les demandes existantes
-    const all = loadRequests();
-    setMyRequests(all);
-
-    setInitialized(true);
-
-    return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Filtrer juste les demandes de cet employé
-  const myVisibleRequests =
-    currentEmployeeId == null
-      ? []
-      : myRequests.filter((r) => r.employeeId === currentEmployeeId);
+  // Sauvegarder dès qu'on modifie la liste
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+  }, [requests]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!currentEmployeeId || !type) return;
+    if (!employeeName.trim() || !date) return;
 
-    if (!date.trim()) {
-      setFeedback('Merci de choisir une date.');
-      return;
-    }
-    if (type === 'retard' && !heure.trim()) {
-      setFeedback("Merci d'indiquer une heure de retard.");
-      return;
-    }
-
-    setSending(true);
-    setFeedback(null);
-
-    const all = loadRequests();
     const newReq: EmployeeRequest = {
       id: `REQ-${Date.now()}`,
-      employeeId: currentEmployeeId,
+      employeeName: employeeName.trim(),
       type,
       date,
-      heure: type === 'retard' ? heure : undefined,
+      heure: heure || undefined,
       message: message.trim() || undefined,
       treated: false,
+      createdAt: new Date().toISOString(),
     };
 
-    const updated = [...all, newReq];
-    saveRequests(updated);
-    setMyRequests(updated);
-
-    // Reset du formulaire mais on garde le type sélectionné
-    setDate('');
-    setHeure('');
-    setMessage('');
-    setSending(false);
-    setFeedback('Demande envoyée au responsable ✅');
+    setRequests((prev) => [newReq, ...prev]);
+    setEmployeeName("");
+    setDate("");
+    setHeure("");
+    setMessage("");
+    setType("retard");
   };
 
-  const niceTypeLabel = (t: DemandeType | null) => {
-    if (!t) return 'Choisissez un type de demande';
-    if (t === 'retard') return 'Déclaration de retard';
-    if (t === 'conge') return 'Demande de congé';
-    return 'Absence exceptionnelle';
-  };
-
-  if (!initialized) {
-    return (
-      <div
-        style={{ ...rootStyle, background: '#0B1524', color: 'white' }}
-      >
-        <div style={{ opacity: 0.7 }}>Chargement…</div>
-      </div>
+  const toggleTreated = (id: string) => {
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === id ? { ...req, treated: !req.treated } : req
+      )
     );
-  }
+  };
+
+  const deleteRequest = (id: string) => {
+    if (!window.confirm("Supprimer cette demande ?")) return;
+    setRequests((prev) => prev.filter((req) => req.id !== id));
+  };
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
-    <>
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 10mm;
-          }
+    <div className="cb-demandes">
+      <div className="cb-demandes__header">
+        <h2 className="cb-dashboard__title">Demandes des employés</h2>
+        <p className="cb-dashboard__subtitle">
+          Retards, congés, absences – suivi centralisé pour le responsable.
+        </p>
+      </div>
 
-          body {
-            margin: 0;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-        }
-      `}</style>
+      <div className="cb-demandes__grid">
+        {/* Formulaire */}
+        <section className="cb-card cb-demandes__card-form">
+          <h3 className="cb-card__title">Nouvelle demande</h3>
+          <p className="cb-card__subtitle">
+            Enregistre une demande pour un membre de l’équipe.
+          </p>
 
-      <div
-        style={{ ...rootStyle, background: '#0B1524' }}
-      >
-        <section style={cardStyle}>
-          {/* HEADER */}
-         <header
-  style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 14,
-  }}
->
-  <div>
-    <h1
-      style={{
-        fontSize: isMobile ? 18 : 20,
-        margin: 0,
-        marginBottom: 4,
-      }}
-    >
-      Équipe du Cavalier Bleu
-    </h1>
-    <div
-      style={{
-        fontSize: 12,
-        color: '#6B7485',
-      }}
-    >
-      Gestion des employés · impacte le planning & la masse salariale
-    </div>
-  </div>
-
-  {/* MENU DÉROULANT NAVIGATION */}
-  <div>
-    <select
-      defaultValue=""
-      onChange={(e) => {
-        const value = e.target.value;
-        if (value) window.location.href = value;
-      }}
-      style={{
-        fontSize: 11,
-        padding: '6px 10px',
-        borderRadius: 999,
-        border: '1px solid #d1d5db',
-        background: '#ffffff',
-        color: '#111827',
-      }}
-    >
-      <option value="" disabled>
-        Aller à…
-      </option>
-      {navPages.map((p) => (
-        <option key={p.href} value={p.href}>
-          {p.label}
-        </option>
-      ))}
-    </select>
-  </div>
-</header>
-
-          {/* CHOIX DU TYPE */}
-          <div
-            style={{
-              fontSize: 12,
-              color: '#4b5563',
-              marginBottom: 6,
-            }}
-          >
-            Que souhaites-tu signaler ?
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: 8,
-              marginBottom: 16,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setType('retard')}
-              style={{
-                ...typeButtonBase,
-                borderColor:
-                  type === 'retard' ? '#0f766e' : '#d1d5db',
-                background:
-                  type === 'retard' ? '#ECFDF5' : '#ffffff',
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>Retard</div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: '#6b7280',
-                }}
-              >
-                Préviens si tu arrives plus tard que prévu.
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setType('conge')}
-              style={{
-                ...typeButtonBase,
-                borderColor:
-                  type === 'conge' ? '#2563eb' : '#d1d5db',
-                background:
-                  type === 'conge' ? '#EFF6FF' : '#ffffff',
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>Congés</div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: '#6b7280',
-                }}
-              >
-                Demande de jour(s) de congé.
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setType('absence')}
-              style={{
-                ...typeButtonBase,
-                borderColor:
-                  type === 'absence' ? '#b45309' : '#d1d5db',
-                background:
-                  type === 'absence' ? '#FFFBEB' : '#ffffff',
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>Absence</div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: '#6b7280',
-                }}
-              >
-                Cas exceptionnel (maladie, urgence…).
-              </div>
-            </button>
-          </div>
-
-          {/* FORMULAIRE */}
-          <form onSubmit={handleSubmit}>
-            <div
-              style={{
-                marginBottom: 10,
-                fontSize: 12,
-                color: '#6b7280',
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>
-                {niceTypeLabel(type)}
-              </span>
-            </div>
-
-            {/* DATE */}
-            <div style={{ marginBottom: 10 }}>
-              <div style={labelStyle}>Date concernée</div>
+          <form className="cb-form" onSubmit={handleSubmit}>
+            <div className="cb-form__group">
+              <label className="cb-form__label">Employé</label>
               <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                style={inputStyle}
+                className="cb-form__input"
+                type="text"
+                placeholder="Ex : Amine, Harouna, Raja..."
+                value={employeeName}
+                onChange={(e) => setEmployeeName(e.target.value)}
                 required
               />
             </div>
 
-            {/* HEURE pour retard uniquement */}
-            {type === 'retard' && (
-              <div style={{ marginBottom: 10 }}>
-                <div style={labelStyle}>Heure estimée d&apos;arrivée</div>
+            <div className="cb-form__inline">
+              <div className="cb-form__group">
+                <label className="cb-form__label">Type</label>
+                <select
+                  className="cb-form__input"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as RequestType)}
+                >
+                  <option value="retard">Retard</option>
+                  <option value="absence">Absence</option>
+                  <option value="conge">Congé</option>
+                </select>
+              </div>
+
+              <div className="cb-form__group">
+                <label className="cb-form__label">Date</label>
                 <input
-                  type="time"
-                  value={heure}
-                  onChange={(e) => setHeure(e.target.value)}
-                  style={inputStyle}
+                  className="cb-form__input"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
                   required
                 />
               </div>
-            )}
 
-            {/* MESSAGE OPTIONNEL */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={labelStyle}>
-                Commentaire (optionnel)
+              <div className="cb-form__group">
+                <label className="cb-form__label">Heure (optionnel)</label>
+                <input
+                  className="cb-form__input"
+                  type="time"
+                  value={heure}
+                  onChange={(e) => setHeure(e.target.value)}
+                />
               </div>
+            </div>
+
+            <div className="cb-form__group">
+              <label className="cb-form__label">Message (optionnel)</label>
               <textarea
+                className="cb-form__textarea"
+                placeholder="Détails : raison du retard, durée de l’absence, etc."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
-                style={{
-                  ...inputStyle,
-                  resize: 'vertical',
-                  fontFamily: 'inherit',
-                }}
-                placeholder="Ajoute un détail pour le responsable si besoin."
               />
             </div>
 
-            {/* FEEDBACK */}
-            {feedback && (
-              <div
-                style={{
-                  marginBottom: 10,
-                  fontSize: 12,
-                  color: feedback.includes('✅')
-                    ? '#16a34a'
-                    : '#b91c1c',
-                }}
-              >
-                {feedback}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={!type || sending}
-              style={{
-                width: '100%',
-                borderRadius: 999,
-                border: 'none',
-                padding: '9px 12px',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: type && !sending ? 'pointer' : 'not-allowed',
-                background: !type || sending ? '#d1d5db' : '#0f766e',
-                color: '#ffffff',
-                marginBottom: 16,
-              }}
-            >
-              {sending
-                ? 'Envoi en cours...'
-                : "Envoyer la demande au responsable"}
-            </button>
+            <div className="cb-form__actions">
+              <button type="submit" className="cb-button cb-button--primary">
+                Enregistrer la demande
+              </button>
+            </div>
           </form>
+        </section>
 
-          {/* HISTORIQUE DES DEMANDES */}
-          <div
-            style={{
-              fontSize: 12,
-              color: '#4b5563',
-              marginBottom: 6,
-            }}
-          >
-            Tes dernières demandes
-          </div>
+        {/* Liste des demandes */}
+        <section className="cb-card cb-demandes__card-list">
+          <h3 className="cb-card__title">
+            Historique des demandes ({requests.length})
+          </h3>
+          <p className="cb-card__subtitle">
+            Tu peux valider, marquer comme traitée ou supprimer chaque demande.
+          </p>
 
-          {myVisibleRequests.length === 0 ? (
-            <div
-              style={{
-                fontSize: 12,
-                color: '#9ca3af',
-              }}
-            >
-              Aucune demande enregistrée pour l&apos;instant.
-            </div>
+          {requests.length === 0 ? (
+            <p className="cb-demandes__empty">
+              Aucune demande enregistrée pour le moment.
+            </p>
           ) : (
-            <div
-              style={{
-                maxHeight: 160,
-                overflowY: 'auto',
-                borderRadius: 12,
-                background: '#ffffff',
-                border: '1px solid #e5e7eb',
-                padding: '6px 8px',
-              }}
-            >
-              {myVisibleRequests
-                .slice()
-                .reverse()
-                .slice(0, 10)
-                .map((r) => {
-                  let typeLabel = '';
-                  let typeColor = '#4b5563';
-                  let typeBg = '#e5e7eb';
-
-                  if (r.type === 'retard') {
-                    typeLabel = 'Retard';
-                    typeColor = '#b45309';
-                    typeBg = '#FFFBEB';
-                  } else if (r.type === 'conge') {
-                    typeLabel = 'Congé';
-                    typeColor = '#1d4ed8';
-                    typeBg = '#DBEAFE';
-                  } else {
-                    typeLabel = 'Absence';
-                    typeColor = '#b91c1c';
-                    typeBg = '#FEE2E2';
-                  }
-
-                  return (
-                    <div
-                      key={r.id}
-                      style={{
-                        padding: '4px 2px',
-                        borderBottom: '1px solid #f3f4f6',
-                        fontSize: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: 8,
-                        }}
+            <ul className="cb-demandes__list">
+              {requests.map((req) => (
+                <li
+                  key={req.id}
+                  className={`cb-demandes__item ${
+                    req.treated ? "cb-demandes__item--treated" : ""
+                  }`}
+                >
+                  <div className="cb-demandes__item-main">
+                    <div className="cb-demandes__item-header">
+                      <span className="cb-demandes__employee">
+                        {req.employeeName}
+                      </span>
+                      <span
+                        className={`cb-pill cb-pill--${req.type} ${
+                          req.treated ? "cb-pill--soft" : ""
+                        }`}
                       >
-                        <div>
-                          <div>
-                            <span
-                              style={{
-                                ...smallTag,
-                                background: typeBg,
-                                color: typeColor,
-                              }}
-                            >
-                              {typeLabel}
-                            </span>{' '}
-                            <span style={{ marginLeft: 4 }}>
-                              le {r.date}
-                              {r.heure ? ` · ${r.heure}` : ''}
-                            </span>
-                          </div>
-                          {r.message && (
-                            <div
-                              style={{
-                                fontSize: 11,
-                                color: '#6b7280',
-                                marginTop: 2,
-                              }}
-                            >
-                              {r.message}
-                            </div>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: r.treated ? '#16a34a' : '#9ca3af',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {r.treated
-                            ? 'Vu par le responsable'
-                            : 'En attente'}
-                        </div>
-                      </div>
+                        {req.type === "retard" && "Retard"}
+                        {req.type === "absence" && "Absence"}
+                        {req.type === "conge" && "Congé"}
+                      </span>
                     </div>
-                  );
-                })}
-            </div>
+
+                    <div className="cb-demandes__meta">
+                      <span className="cb-demandes__meta-item">
+                        📅 {req.date}
+                        {req.heure && ` • 🕒 ${req.heure}`}
+                      </span>
+                      <span className="cb-demandes__meta-item">
+                        Créée le {formatDate(req.createdAt)}
+                      </span>
+                    </div>
+
+                    {req.message && (
+                      <p className="cb-demandes__message">{req.message}</p>
+                    )}
+                  </div>
+
+                  <div className="cb-demandes__actions">
+                    <button
+                      type="button"
+                      className="cb-chip cb-chip--primary"
+                      onClick={() => toggleTreated(req.id)}
+                    >
+                      {req.treated ? "Marquer comme en attente" : "Marquer traitée"}
+                    </button>
+                    <button
+                      type="button"
+                      className="cb-chip cb-chip--danger"
+                      onClick={() => deleteRequest(req.id)}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
       </div>
-    </>
+    </div>
   );
 }
