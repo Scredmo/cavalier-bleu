@@ -15,6 +15,8 @@ export default function RootLayout({
     <html lang="fr">
       <body>
         <div className="cb-root">
+          
+          {/* ░░ SIDEBAR (DESKTOP / TABLETTE) ░░ */}
           <aside className="cb-sidebar">
             <div className="cb-sidebar__logo">
               <span className="cb-logo-a">A</span>
@@ -26,22 +28,32 @@ export default function RootLayout({
                 <span className="cb-nav-item__icon">🏠</span>
                 <span className="cb-nav-item__label">Dashboard</span>
               </a>
+
               <a href="/planning" className="cb-nav-item">
                 <span className="cb-nav-item__icon">📅</span>
                 <span className="cb-nav-item__label">Planning</span>
               </a>
+
               <a href="/presence" className="cb-nav-item">
-                <span className="cb-nav-item__icon">📝</span>
+                <span className="cb-nav-item__icon">🧾</span>
                 <span className="cb-nav-item__label">Présence</span>
               </a>
+
+              <a href="/employes" className="cb-nav-item">
+                <span className="cb-nav-item__icon">👥</span>
+                <span className="cb-nav-item__label">Employés</span>
+              </a>
+
               <a href="/demandes" className="cb-nav-item">
                 <span className="cb-nav-item__icon">📨</span>
                 <span className="cb-nav-item__label">Demandes</span>
               </a>
+
               <a href="/depenses" className="cb-nav-item">
                 <span className="cb-nav-item__icon">💶</span>
                 <span className="cb-nav-item__label">Dépenses</span>
               </a>
+
               <a href="/reservations" className="cb-nav-item">
                 <span className="cb-nav-item__icon">🍽️</span>
                 <span className="cb-nav-item__label">Réservations</span>
@@ -53,14 +65,24 @@ export default function RootLayout({
             </div>
           </aside>
 
+          {/* ░░ NAV FLOTTANTE MOBILE ░░ */}
+          <nav className="cb-bottom-nav">
+            <a href="/" className="cb-bottom-nav__item">🏠</a>
+            <a href="/planning" className="cb-bottom-nav__item">📅</a>
+            <a href="/presence" className="cb-bottom-nav__item">🧾</a>
+            <a href="/employes" className="cb-bottom-nav__item">👥</a>
+            <a href="/depenses" className="cb-bottom-nav__item">💶</a>
+            <a href="/reservations" className="cb-bottom-nav__item">🍽️</a>
+          </nav>
+
+          {/* ░░ CONTENU PRINCIPAL ░░ */}
           <main className="cb-main">
             <header className="cb-topbar">
               <div className="cb-topbar__left">
                 <h1 className="cb-topbar__title">Cavalier Bleu</h1>
-                <p className="cb-topbar__subtitle">
-                  Gestion quotidienne du restaurant
-                </p>
+                <p className="cb-topbar__subtitle">Gestion quotidienne du restaurant</p>
               </div>
+
               <div className="cb-topbar__right">
                 <span className="cb-topbar__user">Amine • Service</span>
               </div>
@@ -68,6 +90,7 @@ export default function RootLayout({
 
             <section className="cb-content">{children}</section>
           </main>
+
         </div>
       </body>
     </html>
