@@ -1348,3 +1348,34 @@ a {
     grid-template-columns: 1fr;
   }
 }
+/* ====== Mobile : éviter le zoom iOS sur les inputs ====== */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* ====== Global : pas de scroll horizontal ====== */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Pour éviter que le contenu pousse la mise en page en largeur */
+.cb-main {
+  min-width: 0;
+}
+
+/* Ajuster les marges en mobile pour que rien ne déborde */
+@media (max-width: 768px) {
+  .cb-content {
+    padding-inline: 12px;
+  }
+
+  .cb-card {
+    border-radius: 14px;
+  }
+}
