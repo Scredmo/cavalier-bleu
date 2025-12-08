@@ -626,120 +626,144 @@ export default function PresencePage() {
         </p>
       </section>
 
-      {/* TABLEAU PRINCIPAL (ÉCRAN) */}
-      <section className="cb-card cb-presence-main">
-        <div className="cb-presence__table-wrapper">
-          <table className="cb-presence__table">
-            <thead>
-              <tr>
-                <th>Employé</th>
-                <th>Présent</th>
-                <th>Arrivée</th>
-                <th>Départ</th>
-                <th>Heures</th>
-                <th>CA individuel</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employees.map((emp) => {
-                const rec = getRecord(date, emp.id);
-                const hours =
-                  rec.present && rec.start && rec.end
-                    ? parseHours(rec.start, rec.end)
-                    : 0;
+ {/* TABLEAU PRINCIPAL (ÉCRAN + MOBILE) */}
+<section className="cb-card cb-presence-main">
+  <div className="cb-presence__table-wrapper">
+    <table className="cb-presence__table cb-presence__table--main">
+      <thead>
+        <tr>
+          <th>Employé</th>
+          <th>Présent</th>
+          <th>Arrivée</th>
+          <th>Départ</th>
+          <th>Heures</th>
+          <th>CA individuel</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {employees.map((emp) => {
+          const rec = getRecord(date, emp.id);
+          const hours =
+            rec.present && rec.start && rec.end
+              ? parseHours(rec.start, rec.end)
+              : 0;
 
-                const isCuisine = emp.role === "Cuisine";
+          const isCuisine = emp.role === "Cuisine";
 
-                return (
-                  <tr key={emp.id}>
-                    <td>
-                      <div className="cb-presence__employee-cell">
-                        <span
-                          className={
-                            "cb-role-dot cb-role-dot--" + roleSlug(emp.role)
-                          }
-                        />
-                        <div>
-                          <div className="cb-presence__employee-name">
-                            {emp.name}
-                          </div>
-                          <div className="cb-presence__employee-role">
-                            {emp.role}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <label className="cb-presence__checkbox">
-                        <input
-                          type="checkbox"
-                          checked={rec.present}
-                          onChange={() => handleTogglePresent(emp.id)}
-                        />
-                        <span />
-                      </label>
-                    </td>
-                    <td>
-                      <input
-                        type="time"
-                        value={rec.start ?? ""}
-                        onChange={(e) =>
-                          handleTimeChange(emp.id, "start", e.target.value)
-                        }
-                        className="cb-presence__time-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="time"
-                        value={rec.end ?? ""}
-                        onChange={(e) =>
-                          handleTimeChange(emp.id, "end", e.target.value)
-                        }
-                        className="cb-presence__time-input"
-                      />
-                    </td>
-                    <td className="cb-presence__hours-cell">
-                      {hours > 0 ? `${hours.toFixed(1)} h` : "—"}
-                    </td>
-                    <td>
-                      {isCuisine ? (
-                        <span className="cb-presence__ca-disabled">—</span>
-                      ) : (
-                        <input
-                          type="number"
-                          className="cb-presence__ca-input"
-                          value={
-                            typeof rec.ca === "number" && rec.ca > 0
-                              ? rec.ca
-                              : ""
-                          }
-                          onChange={(e) =>
-                            handleCAChange(emp.id, e.target.value)
-                          }
-                          placeholder="0,00"
-                        />
-                      )}
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={rec.note ?? ""}
-                        onChange={(e) =>
-                          handleNoteChange(emp.id, e.target.value)
-                        }
-                        placeholder="Retard, pause, remarque..."
-                        className="cb-presence__note-input"
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+          return (
+            <tr key={emp.id} className="cb-presence__row">
+              {/* Employé */}
+              <td className="cb-presence__cell cb-presence__cell--employee">
+                <span className="cb-presence__cell-label">Employé</span>
+                <div className="cb-presence__employee-cell">
+                  <span
+                    className={
+                      "cb-role-dot cb-role-dot--" + roleSlug(emp.role)
+                    }
+                  />
+                  <div>
+                    <div className="cb-presence__employee-name">
+                      {emp.name}
+                    </div>
+                    <div className="cb-presence__employee-role">
+                      {emp.role}
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              {/* Présent */}
+              <td className="cb-presence__cell cb-presence__cell--present">
+                <span className="cb-presence__cell-label">Présent</span>
+                <label className="cb-presence__checkbox">
+                  <input
+                    type="checkbox"
+                    checked={rec.present}
+                    onChange={() => handleTogglePresent(emp.id)}
+                  />
+                  <span />
+                </label>
+              </td>
+
+              {/* Arrivée */}
+              <td className="cb-presence__cell cb-presence__cell--start">
+                <span className="cb-presence__cell-label">Arrivée</span>
+                <input
+                  type="time"
+                  value={rec.start ?? ""}
+                  onChange={(e) =>
+                    handleTimeChange(emp.id, "start", e.target.value)
+                  }
+                  className="cb-presence__time-input"
+                />
+              </td>
+
+              {/* Départ */}
+              <td className="cb-presence__cell cb-presence__cell--end">
+                <span className="cb-presence__cell-label">Départ</span>
+                <input
+                  type="time"
+                  value={rec.end ?? ""}
+                  onChange={(e) =>
+                    handleTimeChange(emp.id, "end", e.target.value)
+                  }
+                  className="cb-presence__time-input"
+                />
+              </td>
+
+              {/* Heures */}
+              <td className="cb-presence__cell cb-presence__cell--hours">
+                <span className="cb-presence__cell-label">Heures</span>
+                <span className="cb-presence__hours-value">
+                  {hours > 0 ? `${hours.toFixed(1)} h` : "—"}
+                </span>
+              </td>
+
+              {/* CA individuel */}
+              <td className="cb-presence__cell cb-presence__cell--ca">
+                <span className="cb-presence__cell-label">
+                  CA individuel
+                </span>
+                {isCuisine ? (
+                  <span className="cb-presence__ca-disabled">—</span>
+                ) : (
+                  <input
+                    type="number"
+                    className="cb-presence__ca-input"
+                    value={
+                      typeof rec.ca === "number" && rec.ca > 0
+                        ? rec.ca
+                        : ""
+                    }
+                    onChange={(e) =>
+                      handleCAChange(emp.id, e.target.value)
+                    }
+                    placeholder="0,00"
+                  />
+                )}
+              </td>
+
+              {/* Note */}
+              <td className="cb-presence__cell cb-presence__cell--note">
+                <span className="cb-presence__cell-label">Note</span>
+                <input
+                  type="text"
+                  value={rec.note ?? ""}
+                  onChange={(e) =>
+                    handleNoteChange(emp.id, e.target.value)
+                  }
+                  placeholder="Retard, pause, remarque..."
+                  className="cb-presence__note-input"
+                />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+</section>
 
       {/* VERSION PDF / IMPRESSION */}
       <section className="cb-presence-print">

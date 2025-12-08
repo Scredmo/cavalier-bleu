@@ -1409,3 +1409,300 @@ body {
     touch-action: manipulation;
   }
 }
+
+/* ====== LAYOUT MOBILE GLOBAL ====== */
+
+@media (max-width: 768px) {
+  /* Le layout passe en une seule colonne */
+  .cb-root {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  /* On cache la sidebar en mobile (on garde la nav flottante) */
+  .cb-sidebar {
+    display: none;
+  }
+
+  /* Zone principale : un peu de marge en bas pour la nav flottante */
+  .cb-main {
+    min-width: 0;
+    padding: 8px 0 80px;
+  }
+
+  /* Contenu centré, sans débordement */
+  .cb-content {
+    padding-inline: 12px;
+    max-width: 100%;
+  }
+
+  /* Topbar plus compacte */
+  .cb-topbar {
+    padding-inline: 16px;
+    padding-block: 8px;
+  }
+
+  .cb-topbar__title {
+    font-size: 16px;
+  }
+
+  .cb-topbar__subtitle {
+    font-size: 11px;
+  }
+
+  /* Cartes plein écran mais avec air */
+  .cb-card {
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  /* Pas de scroll horizontal nulle part */
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .cb-main,
+  .cb-content {
+    overflow-x: hidden;
+  }
+}
+/* === PRÉSENCE : header & résumé plus compact en mobile === */
+
+@media (max-width: 768px) {
+  .cb-presence__header {
+    margin-bottom: 12px;
+  }
+
+  .cb-presence__header-main {
+    gap: 4px;
+  }
+
+  .cb-presence__header-title {
+    font-size: 20px;
+    line-height: 1.1;
+  }
+
+  .cb-presence__header-subtitle {
+    font-size: 12px;
+  }
+
+  .cb-presence__summary-card {
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  .cb-presence__summary-grid {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+  }
+
+  .cb-presence__summary-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .cb-presence__summary-label {
+    font-size: 11px;
+  }
+
+  .cb-presence__summary-value {
+    font-size: 14px;
+  }
+
+  .cb-presence__summary-note {
+    margin-top: 6px;
+    font-size: 11px;
+  }
+}
+/* === PRÉSENCE : liste des employés en mode cartes === */
+
+@media (max-width: 768px) {
+  .cb-presence__employees-card {
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  .cb-presence__employees-header {
+    font-size: 12px;
+    padding-bottom: 6px;
+  }
+
+  .cb-presence__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) auto auto;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 4px;
+    padding-block: 6px;
+  }
+
+  .cb-presence__employee-info {
+    font-size: 13px;
+  }
+
+  .cb-presence__employee-role {
+    font-size: 11px;
+  }
+
+  .cb-presence__presence-dot {
+    margin-right: 0;
+  }
+
+  .cb-presence__time-badge {
+    min-width: 74px;
+  }
+}
+/* === PRÉSENCE : bloc CA individuel mode mobile propre === */
+
+@media (max-width: 768px) {
+  .cb-presence__ca-card {
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  /* On limite la largeur utile et on évite tout débordement */
+  .cb-presence__ca-table-wrapper {
+    overflow-x: hidden;
+  }
+
+  .cb-presence__ca-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .cb-presence__ca-table thead {
+    display: none; /* on enlève la grosse ligne de titres en mobile */
+  }
+
+  .cb-presence__ca-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 8px;
+    row-gap: 4px;
+    padding-block: 6px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* cellules : on les transforme en petits blocs "label + valeur" */
+  .cb-presence__ca-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+  }
+
+  .cb-presence__ca-label {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  .cb-presence__ca-hours,
+  .cb-presence__ca-input {
+    font-size: 13px;
+  }
+
+  /* On masque les colonnes secondaires pour alléger :
+     - par exemple la colonne "Note" ou "Règlement" si tu en as une */
+  .cb-presence__ca-cell--extra {
+    display: none;
+  }
+}
+/* ====== FEUILLE DE PRÉSENCE – TABLEAU RESPONSIVE ====== */
+
+/* Desktop par défaut */
+.cb-presence__table--main {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cb-presence__table--main th,
+.cb-presence__table--main td {
+  padding: 8px 6px;
+  text-align: left;
+}
+
+.cb-presence__cell-label {
+  display: none; /* on n’affiche les labels qu’en mobile */
+}
+
+/* Mobile : chaque employé = petite "carte" verticale */
+@media (max-width: 768px) {
+  .cb-presence__table-wrapper {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .cb-presence__table--main thead {
+    display: none;
+  }
+
+  .cb-presence__table--main tbody {
+    display: block;
+  }
+
+  .cb-presence__row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .cb-presence__cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+    width: 100%;
+  }
+
+  .cb-presence__cell--employee {
+    align-items: flex-start;
+    margin-bottom: 4px;
+  }
+
+  .cb-presence__employee-cell {
+    gap: 6px;
+  }
+
+  .cb-presence__cell-label {
+    display: block;
+    font-size: 11px;
+    color: #9ca3af;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  .cb-presence__time-input {
+    max-width: 110px;
+  }
+
+  .cb-presence__hours-value {
+    font-size: 13px;
+  }
+
+  .cb-presence__ca-input {
+    max-width: 110px;
+  }
+
+  .cb-presence__note-input {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  /* Option : on allège un peu en mobile en mettant la note sous la ligne */
+  .cb-presence__cell--note {
+    margin-top: 2px;
+  }
+
+  .cb-presence-main {
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+}
