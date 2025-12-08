@@ -1379,3 +1379,33 @@ body {
     border-radius: 14px;
   }
 }
+
+/* Empêche tout débordement horizontal en mobile */
+@media (max-width: 768px) {
+  .cb-planning__mobile-view,
+  .cb-card,
+  .cb-content,
+  .cb-main {
+    max-width: 100%;
+    width: 100%;
+    overflow-x: hidden !important;
+  }
+}
+
+/* Ajuste les pills horaires en mobile */
+@media (max-width: 768px) {
+  .cb-shift-pill {
+    max-width: 85%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+}
