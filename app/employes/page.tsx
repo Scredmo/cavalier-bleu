@@ -1,10 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-/* ============================================================
-   TYPES
-============================================================ */
+import { useEffect, useMemo, useState } from "react";
 
 type Role = "Patron" | "Responsable" | "Barman" | "Cuisine" | "Serveur";
 
@@ -13,313 +9,1051 @@ type Employee = {
   firstName: string;
   lastName: string;
   role: Role;
-  hourlyRate: number;
+  phone?: string;
+  email?: string;
+  address?: string;
   monthlyContractHours: number;
+  hourlyRateNet: number;
+  hourlyRateGross: number;
+
+  // 🔹 Infos administratives (pour la fiche complète)
+  socialSecurityNumber?: string;
+  rib?: string;
+  iban?: string;
+  contractType?: string;
+  bankName?: string;
+  hireDate?: string; // "YYYY-MM-DD"
+};
+
+type StoredEmployee = Employee & {
+  name: string; // compat pour la présence
+  hourlyRate: number; // compat : on stocke le brut horaire ici
 };
 
 const STORAGE_EMPLOYEES_KEY = "CB_EMPLOYEES";
+const STORAGE_PRESENCE_KEY = "CB_PRESENCE_V1";
 
-/* ============================================================
-   HELPERS
-============================================================ */
+type PresenceRecord = {
+  present: boolean;
+  start?: string;
+  end?: string;
+};
 
-function generateId() {
-  return Math.random().toString(36).slice(2, 10);
+type PresenceState = {
+  [key: string]: PresenceRecord; // `${date}::${employeeId}`
+};
+
+// même mapping que dans la feuille de présence
+const DEFAULT_EMPLOYEES: Employee[] = [
+  {
+    id: "aurelie",
+    firstName: "Aurélie",
+    lastName: "",
+    role: "Patron",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "hadrien",
+    firstName: "Hadrien",
+    lastName: "",
+    role: "Responsable",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "eric",
+    firstName: "Eric",
+    lastName: "",
+    role: "Responsable",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "harouna",
+    firstName: "Harouna",
+    lastName: "",
+    role: "Barman",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "raja",
+    firstName: "Raja",
+    lastName: "",
+    role: "Cuisine",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "pirakash",
+    firstName: "PIRAKASH",
+    lastName: "",
+    role: "Cuisine",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "alan",
+    firstName: "Alan",
+    lastName: "",
+    role: "Cuisine",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "amine",
+    firstName: "Amine",
+    lastName: "",
+    role: "Serveur",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "tom",
+    firstName: "Tom",
+    lastName: "",
+    role: "Serveur",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+  {
+    id: "nazario",
+    firstName: "Nazario",
+    lastName: "",
+    role: "Serveur",
+    phone: "",
+    email: "",
+    address: "",
+    monthlyContractHours: 0,
+    hourlyRateNet: 0,
+    hourlyRateGross: 0,
+    socialSecurityNumber: "",
+    rib: "",
+    iban: "",
+    contractType: "",
+    bankName: "",
+    hireDate: "",
+  },
+];
+
+function parseHours(start?: string, end?: string): number {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  if (
+    Number.isNaN(sh) ||
+    Number.isNaN(sm) ||
+    Number.isNaN(eh) ||
+    Number.isNaN(em)
+  )
+    return 0;
+  const startMin = sh * 60 + sm;
+  const endMin = eh * 60 + em;
+  if (endMin <= startMin) return 0;
+  return (endMin - startMin) / 60;
 }
 
-function calcIndicator(hours: number, contract: number) {
-  if (contract === 0) return { label: "—", className: "none" };
-  if (hours === 0) return { label: "0 h", className: "none" };
-  if (hours < contract * 0.6) return { label: `${hours} h`, className: "low" };
-  if (hours < contract) return { label: `${hours} h`, className: "almost" };
-  if (hours === contract) return { label: `${hours} h`, className: "ok" };
-  return { label: `+${hours - contract} h`, className: "extra" };
+function getCurrentMonthKey() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  return `${year}-${String(month).padStart(2, "0")}`; // 2025-12
 }
 
-/* MOCK – en production tu récupéreras depuis presence */
-function getHoursForEmployeeMonthly(employeeId: string): number {
-  return Math.floor(Math.random() * 160);
+function fullName(emp: Employee): string {
+  return `${emp.firstName} ${emp.lastName ?? ""}`.trim();
 }
 
-/* ============================================================
-   PAGE EMPLOYÉS
-============================================================ */
+type FormState = {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  phone: string;
+  email: string;
+  address: string;
+  monthlyContractHours: string;
+  hourlyRateNet: string;
+  hourlyRateGross: string;
+
+  socialSecurityNumber: string;
+  rib: string;
+  iban: string;
+  contractType: string;
+  bankName: string;
+  hireDate: string;
+};
+
+const emptyForm: FormState = {
+  id: undefined,
+  firstName: "",
+  lastName: "",
+  role: "Serveur",
+  phone: "",
+  email: "",
+  address: "",
+  monthlyContractHours: "",
+  hourlyRateNet: "",
+  hourlyRateGross: "",
+  socialSecurityNumber: "",
+  rib: "",
+  iban: "",
+  contractType: "",
+  bankName: "",
+  hireDate: "",
+};
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<Employee | null>(null);
+  const [presence, setPresence] = useState<PresenceState>({});
+  const [mobileIndex, setMobileIndex] = useState(0);
 
-  /* ------------------------------------------------------------
-     LOAD EMPLOYEES
-  ------------------------------------------------------------ */
+  // modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm);
+
+  const monthKey = getCurrentMonthKey();
+
+  /* -----------------------------
+     1. Chargement initial
+  ----------------------------- */
+
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // employés
     try {
-      const raw = localStorage.getItem(STORAGE_EMPLOYEES_KEY);
+      const raw = window.localStorage.getItem(STORAGE_EMPLOYEES_KEY);
       if (raw) {
-        setEmployees(JSON.parse(raw));
+        const parsed = JSON.parse(raw) as StoredEmployee[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped: Employee[] = parsed.map((e) => ({
+            id: e.id,
+            firstName: (e as any).firstName ?? e.name.split(" ")[0] ?? "",
+            lastName:
+              (e as any).lastName ??
+              e.name.split(" ").slice(1).join(" ") ??
+              "",
+            role: e.role,
+            phone: (e as any).phone ?? "",
+            email: (e as any).email ?? "",
+            address: (e as any).address ?? "",
+            monthlyContractHours:
+              Number((e as any).monthlyContractHours) || 0,
+            hourlyRateNet: Number((e as any).hourlyRateNet) || 0,
+            hourlyRateGross:
+              Number((e as any).hourlyRateGross) || e.hourlyRate || 0,
+
+            // 🔹 On récupère aussi les champs admin s'ils existent déjà
+            socialSecurityNumber: (e as any).socialSecurityNumber ?? "",
+            rib: (e as any).rib ?? "",
+            iban: (e as any).iban ?? "",
+            contractType: (e as any).contractType ?? "",
+            bankName: (e as any).bankName ?? "",
+            hireDate: (e as any).hireDate ?? "",
+          }));
+          setEmployees(mapped);
+        } else {
+          setEmployees(DEFAULT_EMPLOYEES);
+        }
+      } else {
+        setEmployees(DEFAULT_EMPLOYEES);
       }
-    } catch (e) {
-      console.error("Erreur chargement employés", e);
+    } catch (err) {
+      console.error("Erreur chargement employés", err);
+      setEmployees(DEFAULT_EMPLOYEES);
+    }
+
+    // présences
+    try {
+      const rawPresence = window.localStorage.getItem(STORAGE_PRESENCE_KEY);
+      if (rawPresence) {
+        const parsedPresence = JSON.parse(rawPresence) as PresenceState;
+        if (parsedPresence && typeof parsedPresence === "object") {
+          setPresence(parsedPresence);
+        }
+      }
+    } catch (err) {
+      console.error("Erreur chargement présences pour les employés", err);
     }
   }, []);
 
-  /* ------------------------------------------------------------
-     SAVE EMPLOYEES
-  ------------------------------------------------------------ */
-  useEffect(() => {
+  /* -----------------------------
+     2. Sauvegarde employés
+  ----------------------------- */
+
+  const persistEmployees = (list: Employee[]) => {
     if (typeof window === "undefined") return;
-    localStorage.setItem(STORAGE_EMPLOYEES_KEY, JSON.stringify(employees));
-  }, [employees]);
+    const toStore: StoredEmployee[] = list.map((e) => ({
+      ...e,
+      name: fullName(e),
+      hourlyRate: e.hourlyRateGross, // compat avec la feuille de présence
+    }));
+    window.localStorage.setItem(
+      STORAGE_EMPLOYEES_KEY,
+      JSON.stringify(toStore)
+    );
+  };
 
-  /* ------------------------------------------------------------
-     ADD / EDIT
-  ------------------------------------------------------------ */
+  /* -----------------------------
+     3. Calcul heures mensuelles
+  ----------------------------- */
 
-  function openAdd() {
-    setEditing(null);
-    setShowModal(true);
-  }
+  const monthlyHoursByEmployee = useMemo(() => {
+    const result: Record<string, number> = {};
 
-  function openEdit(emp: Employee) {
-    setEditing(emp);
-    setShowModal(true);
-  }
+    Object.entries(presence).forEach(([key, rec]) => {
+      const [datePart, employeeId] = key.split("::");
+      if (!datePart || !employeeId) return;
 
-  function saveEmployee(e: any) {
-    e.preventDefault();
-    const form = new FormData(e.target);
+      // filtrer sur le mois courant
+      if (!datePart.startsWith(monthKey)) return;
 
-    const data: Employee = {
-      id: editing?.id ?? generateId(),
-      firstName: form.get("firstName")!.toString(),
-      lastName: form.get("lastName")!.toString(),
-      role: form.get("role")!.toString() as Role,
-      hourlyRate: Number(form.get("hourlyRate") || 0),
-      monthlyContractHours: Number(form.get("monthlyContractHours") || 0),
-    };
+      if (!rec.present || !rec.start || !rec.end) return;
 
-    if (editing) {
-      setEmployees((prev) =>
-        prev.map((emp) => (emp.id === editing.id ? data : emp))
-      );
-    } else {
-      setEmployees((prev) => [...prev, data]);
+      const hours = parseHours(rec.start, rec.end);
+      if (!hours) return;
+
+      result[employeeId] = (result[employeeId] || 0) + hours;
+    });
+
+    return result;
+  }, [presence, monthKey]);
+
+  /* -----------------------------
+     4. Helpers d’indicateur
+  ----------------------------- */
+
+  function getIndicator(emp: Employee) {
+    const monthlyHours = monthlyHoursByEmployee[emp.id] || 0;
+    const contract = emp.monthlyContractHours || 0;
+
+    if (!contract) {
+      return {
+        label: "Heures non définies",
+        pillText: "—",
+        pillClass: "cb-employee__indicator cb-employee__indicator--none",
+        monthlyHours,
+        diff: 0,
+      };
     }
 
-    setShowModal(false);
-    setEditing(null);
+    const diff = monthlyHours - contract;
+
+    let pillClass = "cb-employee__indicator cb-employee__indicator--none";
+    let pillText = `${monthlyHours.toFixed(1)} h / ${contract} h`;
+
+    if (monthlyHours === 0) {
+      pillClass = "cb-employee__indicator cb-employee__indicator--none";
+    } else if (diff < -5) {
+      pillClass = "cb-employee__indicator cb-employee__indicator--low";
+    } else if (Math.abs(diff) <= 5) {
+      pillClass = "cb-employee__indicator cb-employee__indicator--ok";
+    } else if (diff > 5) {
+      pillClass = "cb-employee__indicator cb-employee__indicator--extra";
+    } else {
+      pillClass = "cb-employee__indicator cb-employee__indicator--almost";
+    }
+
+    return {
+      label: `Contrat : ${contract} h / Mois`,
+      pillText,
+      pillClass,
+      monthlyHours,
+      diff,
+    };
   }
 
-  function deleteEmployee(id: string) {
-    if (!confirm("Supprimer cet employé ?")) return;
-    setEmployees((prev) => prev.filter((e) => e.id !== id));
-  }
+  /* -----------------------------
+     5. Ouverture / fermeture modal
+  ----------------------------- */
 
-  /* ============================================================
-     RENDER
-  ============================================================ */
+  const openCreateModal = () => {
+    setForm(emptyForm);
+    setIsModalOpen(true);
+  };
 
-  const current = employees[activeIndex];
+  const openEditModal = (emp: Employee) => {
+    setForm({
+      id: emp.id,
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      role: emp.role,
+      phone: emp.phone ?? "",
+      email: emp.email ?? "",
+      address: emp.address ?? "",
+      monthlyContractHours:
+        emp.monthlyContractHours > 0
+          ? String(emp.monthlyContractHours)
+          : "",
+      hourlyRateNet:
+        emp.hourlyRateNet > 0 ? String(emp.hourlyRateNet) : "",
+      hourlyRateGross:
+        emp.hourlyRateGross > 0 ? String(emp.hourlyRateGross) : "",
+
+      socialSecurityNumber: emp.socialSecurityNumber ?? "",
+      rib: emp.rib ?? "",
+      iban: emp.iban ?? "",
+      contractType: emp.contractType ?? "",
+      bankName: emp.bankName ?? "",
+      hireDate: emp.hireDate ?? "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  /* -----------------------------
+     6. Gestion formulaire
+  ----------------------------- */
+
+  const handleFormChange = (field: keyof FormState, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const monthlyContractHours = Number(form.monthlyContractHours) || 0;
+    const hourlyRateNet = Number(form.hourlyRateNet) || 0;
+    const hourlyRateGross = Number(form.hourlyRateGross) || 0;
+
+    const base: Employee = {
+      id: form.id ?? crypto.randomUUID(),
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      role: form.role,
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      address: form.address.trim(),
+      monthlyContractHours,
+      hourlyRateNet,
+      hourlyRateGross,
+
+      socialSecurityNumber: form.socialSecurityNumber.trim(),
+      rib: form.rib.trim(),
+      iban: form.iban.trim(),
+      contractType: form.contractType.trim(),
+      bankName: form.bankName.trim(),
+      hireDate: form.hireDate.trim(),
+    };
+
+    setEmployees((prev) => {
+      let next: Employee[];
+      if (form.id) {
+        // édition
+        next = prev.map((e) => (e.id === form.id ? base : e));
+      } else {
+        // création
+        next = [...prev, base];
+      }
+      persistEmployees(next);
+      return next;
+    });
+
+    setIsModalOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
+    if (!window.confirm("Supprimer cet employé ?")) return;
+    setEmployees((prev) => {
+      const next = prev.filter((e) => e.id !== id);
+      persistEmployees(next);
+      return next;
+    });
+  };
+
+  /* -----------------------------
+     7. Navigation mobile (slider)
+  ----------------------------- */
+
+  const handlePrevMobile = () => {
+    setMobileIndex((prev) =>
+      employees.length === 0
+        ? 0
+        : (prev - 1 + employees.length) % employees.length
+    );
+  };
+
+  const handleNextMobile = () => {
+    setMobileIndex((prev) =>
+      employees.length === 0 ? 0 : (prev + 1) % employees.length
+    );
+  };
+
+  /* -----------------------------
+     8. Rendu
+  ----------------------------- */
 
   return (
     <div className="cb-employees">
-      {/* HEADER */}
+      {/* Header */}
       <div className="cb-employees__header">
-        <h2 className="cb-dashboard__title">Employés</h2>
-        <button className="cb-button cb-button--secondary" onClick={openAdd}>
+        <div>
+          <h2 className="cb-dashboard__title">Employés</h2>
+          <p className="cb-dashboard__subtitle">
+            Fiches complètes, contrats, heures et informations administratives.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="cb-button cb-button--secondary"
+          onClick={openCreateModal}
+        >
           Ajouter un employé
         </button>
       </div>
 
-      {/* === MOBILE SLIDER === */}
+      {/* Slider mobile (carrousel) */}
       {employees.length > 0 && (
         <div className="cb-employees__mobile-slider">
           <button
-            className="cb-employees__slider-btn"
-            onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
+            type="button"
+            className="cb-button cb-button--ghost cb-employees__slider-btn"
+            onClick={handlePrevMobile}
           >
-            ⬅
+            ←
           </button>
-
           <span className="cb-employees__slider-label">
-            {current.firstName} {current.lastName}
+            Fiche {employees[mobileIndex]?.firstName || ""} (
+            {mobileIndex + 1}/{employees.length})
           </span>
-
           <button
-            className="cb-employees__slider-btn"
-            onClick={() =>
-              setActiveIndex((i) => Math.min(employees.length - 1, i + 1))
-            }
+            type="button"
+            className="cb-button cb-button--ghost cb-employees__slider-btn"
+            onClick={handleNextMobile}
           >
-            ➝
+            →
           </button>
         </div>
       )}
 
-      {/* === GRID DESKTOP === */}
+      {/* Cartes */}
       <div className="cb-employees__grid">
-        {employees.map((emp, i) => {
-          const hours = getHoursForEmployeeMonthly(emp.id);
-          const indicator = calcIndicator(hours, emp.monthlyContractHours);
+        {employees.map((emp, index) => {
+          const { label, pillText, pillClass, monthlyHours } =
+            getIndicator(emp);
+
+          const salaryNet = monthlyHours * (emp.hourlyRateNet || 0);
+          const salaryGross = monthlyHours * (emp.hourlyRateGross || 0);
+
+          const isActive = index === mobileIndex;
 
           return (
-            <div
+            <article
               key={emp.id}
-              className={`cb-employee-card ${
-                i === activeIndex ? "cb-employee-card--active" : ""
-              }`}
-              onClick={() => setActiveIndex(i)}
+              className={
+                "cb-card cb-employee-card" +
+                (isActive ? " cb-employee-card--active" : "")
+              }
             >
-              <div className="cb-employee-card__header">
+              {/* En-tête carte */}
+              <header className="cb-employee-card__header">
                 <div>
                   <div className="cb-employee-card__name">
-                    {emp.firstName} {emp.lastName}
+                    {fullName(emp)}
                   </div>
                   <div className="cb-employee-card__role">{emp.role}</div>
                 </div>
-
                 <button
-                  className="cb-button cb-button--ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openEdit(emp);
-                  }}
+                  type="button"
+                  className="cb-button cb-button--ghost cb-employee-card__edit-btn"
+                  onClick={() => openEditModal(emp)}
                 >
                   Modifier
                 </button>
+              </header>
+
+              <div className="cb-employee-card__body">
+                {/* Bloc contrat / heures */}
+                <section className="cb-employee-card__section">
+                  <div className="cb-employee-card__section-header">
+                    Contrat & heures
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      Taux horaire brut
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.hourlyRateGross > 0
+                        ? `${emp.hourlyRateGross.toFixed(2)} €`
+                        : "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      Taux horaire net
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.hourlyRateNet > 0
+                        ? `${emp.hourlyRateNet.toFixed(2)} €`
+                        : "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row cb-employee-card__row--indicator">
+                    <span className="cb-employee-card__label">{label}</span>
+                    <span className={pillClass}>{pillText}</span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      Salaire brut estimé
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {salaryGross > 0
+                        ? `${salaryGross.toFixed(2)} €`
+                        : "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      Salaire net estimé
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {salaryNet > 0 ? `${salaryNet.toFixed(2)} €` : "—"}
+                    </span>
+                  </div>
+                </section>
+
+                {/* Bloc contact */}
+                <section className="cb-employee-card__section">
+                  <div className="cb-employee-card__section-header">
+                    Coordonnées
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">📞</span>
+                      Téléphone
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.phone || "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">✉️</span>
+                      Email
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.email || "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">📍</span>
+                      Adresse
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.address || "—"}
+                    </span>
+                  </div>
+                </section>
+
+                {/* Bloc admin / paie */}
+                <section className="cb-employee-card__section">
+                  <div className="cb-employee-card__section-header">
+                    Infos administratives
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">🧑‍💼</span>
+                      N° Sécurité sociale
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.socialSecurityNumber || "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">🏦</span>
+                      Banque
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.bankName || "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">🧾</span>
+                      RIB / IBAN
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.rib || emp.iban || "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">📄</span>
+                      Type de contrat
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.contractType || "—"}
+                    </span>
+                  </div>
+
+                  <div className="cb-employee-card__row">
+                    <span className="cb-employee-card__label">
+                      <span className="cb-employee-card__icon">📅</span>
+                      Date d&apos;embauche
+                    </span>
+                    <span className="cb-employee-card__value">
+                      {emp.hireDate || "—"}
+                    </span>
+                  </div>
+                </section>
               </div>
 
-              {/* Données principales */}
-              <div className="cb-employee-card__section">
-                <div className="cb-employee-card__row">
-                  <span className="cb-employee-card__label">
-                    Taux horaire :
-                  </span>
-                  <span className="cb-employee-card__value">
-                    {emp.hourlyRate} €
-                  </span>
-                </div>
-
-                <div className="cb-employee-card__row">
-                  <span className="cb-employee-card__label">
-                    Contrat mensuel :
-                  </span>
-                  <span className="cb-employee-card__value">
-                    {emp.monthlyContractHours} h
-                  </span>
-                </div>
-
-                {/* Indicateur */}
-                <div className="cb-employee-card__row cb-employee-card__row--indicator">
-                  <span className="cb-employee-card__label">Effectuées :</span>
-                  <span
-                    className={`cb-employee__indicator cb-employee__indicator--${indicator.className}`}
-                  >
-                    {indicator.label}
-                  </span>
-                </div>
-              </div>
-
-              <div className="cb-employee-card__footer">
-                <a className="cb-dashboard-card__link" href="#">
-                  Voir contrat PDF
-                </a>
-
+              <footer className="cb-employee-card__footer">
                 <button
+                  type="button"
+                  className="cb-button cb-button--ghost"
+                >
+                  Voir contrat PDF
+                </button>
+                <button
+                  type="button"
                   className="cb-employee-card__delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteEmployee(emp.id);
-                  }}
+                  onClick={() => handleDelete(emp.id)}
                 >
                   Supprimer
                 </button>
-              </div>
-            </div>
+              </footer>
+            </article>
           );
         })}
       </div>
 
-      {/* ============================================================
-         MODALE AJOUT / EDITION
-      ============================================================ */}
-      {showModal && (
-        <div className="cb-modal">
-          <div className="cb-modal__backdrop" onClick={() => setShowModal(false)} />
-
-          <div className="cb-modal__content">
-            <h3 className="cb-modal__title">
-              {editing ? "Modifier l'employé" : "Nouvel employé"}
+      {/* MODAL AJOUT / ÉDITION EMPLOYÉ */}
+      {isModalOpen && (
+        <div className="cb-employee-modal">
+          <div
+            className="cb-employee-modal__backdrop"
+            onClick={closeModal}
+          />
+          <div className="cb-employee-modal__content">
+            <h3 className="cb-employee-modal__title">
+              {form.id ? "Modifier un employé" : "Ajouter un employé"}
             </h3>
+            <p className="cb-employee-modal__subtitle">
+              Renseigne les informations essentielles maintenant, tu pourras
+              compléter les détails administratifs plus tard.
+            </p>
 
-            <form className="cb-modal__form" onSubmit={saveEmployee}>
-              <div className="cb-modal__grid">
-
-                <div className="cb-modal__field">
+            <form
+              className="cb-employee-modal__form"
+              onSubmit={handleSubmit}
+            >
+              <div className="cb-employee-modal__grid">
+                {/* Identité */}
+                <div className="cb-employee-modal__field">
                   <label>Prénom</label>
                   <input
-                    name="firstName"
-                    defaultValue={editing?.firstName || ""}
+                    type="text"
+                    value={form.firstName}
+                    onChange={(e) =>
+                      handleFormChange("firstName", e.target.value)
+                    }
                     required
                   />
                 </div>
-
-                <div className="cb-modal__field">
+                <div className="cb-employee-modal__field">
                   <label>Nom</label>
                   <input
-                    name="lastName"
-                    defaultValue={editing?.lastName || ""}
-                    required
+                    type="text"
+                    value={form.lastName}
+                    onChange={(e) =>
+                      handleFormChange("lastName", e.target.value)
+                    }
                   />
                 </div>
 
-                <div className="cb-modal__field">
-                  <label>Rôle</label>
-                  <select name="role" defaultValue={editing?.role || "Serveur"}>
-                    <option>Patron</option>
-                    <option>Responsable</option>
-                    <option>Barman</option>
-                    <option>Cuisine</option>
-                    <option>Serveur</option>
+                <div className="cb-employee-modal__field">
+                  <label>Poste</label>
+                  <select
+                    value={form.role}
+                    onChange={(e) =>
+                      handleFormChange("role", e.target.value as Role)
+                    }
+                  >
+                    <option value="Patron">Patron</option>
+                    <option value="Responsable">Responsable</option>
+                    <option value="Barman">Barman</option>
+                    <option value="Cuisine">Cuisine</option>
+                    <option value="Serveur">Serveur</option>
                   </select>
                 </div>
 
-                <div className="cb-modal__field">
-                  <label>Taux horaire (€)</label>
+                {/* Coordonnées */}
+                <div className="cb-employee-modal__field">
+                  <label>Téléphone</label>
                   <input
-                    name="hourlyRate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    defaultValue={editing?.hourlyRate ?? 0}
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) =>
+                      handleFormChange("phone", e.target.value)
+                    }
+                    placeholder="06..."
                   />
                 </div>
 
-                <div className="cb-modal__field">
-                  <label>Heures contrat / mois</label>
+                <div className="cb-employee-modal__field cb-employee-modal__field--full">
+                  <label>Email</label>
                   <input
-                    name="monthlyContractHours"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) =>
+                      handleFormChange("email", e.target.value)
+                    }
+                    placeholder="prenom@exemple.fr"
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field cb-employee-modal__field--full">
+                  <label>Adresse</label>
+                  <input
+                    type="text"
+                    value={form.address}
+                    onChange={(e) =>
+                      handleFormChange("address", e.target.value)
+                    }
+                    placeholder="Adresse complète"
+                  />
+                </div>
+
+                {/* Contrat */}
+                <div className="cb-employee-modal__field">
+                  <label>Heures contrat (mois)</label>
+                  <input
                     type="number"
-                    min="0"
-                    defaultValue={editing?.monthlyContractHours ?? 0}
+                    min={0}
+                    value={form.monthlyContractHours}
+                    onChange={(e) =>
+                      handleFormChange(
+                        "monthlyContractHours",
+                        e.target.value
+                      )
+                    }
+                    placeholder="151.67"
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field">
+                  <label>Taux horaire net (€)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={form.hourlyRateNet}
+                    onChange={(e) =>
+                      handleFormChange("hourlyRateNet", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field">
+                  <label>Taux horaire brut (€)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={form.hourlyRateGross}
+                    onChange={(e) =>
+                      handleFormChange("hourlyRateGross", e.target.value)
+                    }
+                  />
+                </div>
+
+                {/* Admin / paie */}
+                <div className="cb-employee-modal__field cb-employee-modal__field--full">
+                  <label>N° Sécurité sociale</label>
+                  <input
+                    type="text"
+                    value={form.socialSecurityNumber}
+                    onChange={(e) =>
+                      handleFormChange(
+                        "socialSecurityNumber",
+                        e.target.value
+                      )
+                    }
+                    placeholder="15 chiffres"
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field">
+                  <label>Banque</label>
+                  <input
+                    type="text"
+                    value={form.bankName}
+                    onChange={(e) =>
+                      handleFormChange("bankName", e.target.value)
+                    }
+                    placeholder="Nom de la banque"
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field">
+                  <label>RIB</label>
+                  <input
+                    type="text"
+                    value={form.rib}
+                    onChange={(e) =>
+                      handleFormChange("rib", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field cb-employee-modal__field--full">
+                  <label>IBAN</label>
+                  <input
+                    type="text"
+                    value={form.iban}
+                    onChange={(e) =>
+                      handleFormChange("iban", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field">
+                  <label>Type de contrat</label>
+                  <input
+                    type="text"
+                    value={form.contractType}
+                    onChange={(e) =>
+                      handleFormChange("contractType", e.target.value)
+                    }
+                    placeholder="CDI, CDD, Extra..."
+                  />
+                </div>
+
+                <div className="cb-employee-modal__field">
+                  <label>Date d&apos;embauche</label>
+                  <input
+                    type="date"
+                    value={form.hireDate}
+                    onChange={(e) =>
+                      handleFormChange("hireDate", e.target.value)
+                    }
                   />
                 </div>
               </div>
 
-              <div className="cb-modal__footer">
+              <div className="cb-employee-modal__footer">
                 <button
                   type="button"
                   className="cb-button cb-button--ghost"
-                  onClick={() => setShowModal(false)}
+                  onClick={closeModal}
                 >
                   Annuler
                 </button>
-
-                <button type="submit" className="cb-button cb-button--secondary">
-                  Enregistrer
+                <button
+                  type="submit"
+                  className="cb-button cb-button--secondary"
+                >
+                  {form.id ? "Enregistrer" : "Ajouter"}
                 </button>
               </div>
             </form>
