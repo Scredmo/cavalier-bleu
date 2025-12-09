@@ -1706,3 +1706,422 @@ body {
     border-radius: 18px;
   }
 }
+
+/* ====== FICHES EMPLOYÉS ====== */
+
+.cb-employees {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cb-employees__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cb-employees__mobile-slider {
+  display: none; /* activé seulement en mobile */
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+}
+
+.cb-employees__slider-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.cb-employees__slider-btn {
+  padding-inline: 10px;
+  min-width: 0;
+}
+
+/* Grille desktop */
+
+.cb-employees__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Carte employé */
+
+.cb-employee-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 18px;
+  padding: 14px 14px 10px;
+  background: #ffffff;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  transform: translateY(0) scale(1);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.cb-employee-card--active {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.cb-employee-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cb-employee-card__name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.cb-employee-card__role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cb-employee-card__edit-btn {
+  min-width: 0;
+  padding-inline: 10px;
+}
+
+.cb-employee-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cb-employee-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.cb-employee-card__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.cb-employee-card__icon {
+  width: 18px;
+  text-align: center;
+  opacity: 0.75;
+}
+
+/* Sections principales */
+
+.cb-employee-card__section {
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-employee-card__section-header {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 2px;
+}
+
+.cb-employee-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.cb-employee-card__label {
+  color: #6b7280;
+}
+
+.cb-employee-card__value {
+  color: #111827;
+  font-weight: 500;
+}
+
+/* Indicateur heures contrat vs effectuées */
+
+.cb-employee-card__row--indicator {
+  align-items: center;
+}
+
+.cb-employee__indicator {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cb-employee__indicator--none {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.cb-employee__indicator--low {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.cb-employee__indicator--almost {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cb-employee__indicator--ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cb-employee__indicator--extra {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+/* Footer & détails */
+
+.cb-employee-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 6px;
+}
+
+.cb-employee-card__footer--edit {
+  justify-content: flex-end;
+}
+
+.cb-employee-card__delete {
+  margin-left: auto;
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+/* Détails "Voir plus" avec transition */
+
+.cb-employee-card__details {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.22s ease, opacity 0.22s ease;
+}
+
+.cb-employee-card__details--open {
+  max-height: 220px;
+  opacity: 1;
+}
+
+.cb-employee-card__details-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-employee-card__details-section h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 2px;
+}
+
+.cb-employee-card__details-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.cb-employee-card__details-label {
+  color: #6b7280;
+}
+
+.cb-employee-card__details-value {
+  color: #111827;
+}
+
+/* Formulaire d’édition */
+
+.cb-employee-card__edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cb-employee-card__edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.cb-employee-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-employee-card__field label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.cb-employee-card__field input,
+.cb-employee-card__field select {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+.cb-employee-card__field--full {
+  grid-column: 1 / -1;
+}
+
+/* Modal d'ajout employé */
+
+.cb-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cb-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(4px);
+}
+
+.cb-modal__content {
+  position: relative;
+  z-index: 41;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 16px;
+  border-radius: 20px;
+  padding: 16px 18px 14px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+}
+
+.cb-modal__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.cb-modal__subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.cb-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cb-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.cb-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-modal__field label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.cb-modal__field input,
+.cb-modal__field select {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+.cb-modal__field--full {
+  grid-column: 1 / -1;
+}
+
+.cb-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Responsive */
+
+@media (max-width: 1024px) {
+  .cb-employees__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .cb-employees__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cb-employees__mobile-slider {
+    display: flex;
+  }
+
+  .cb-employees__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cb-employee-card {
+    display: none;
+  }
+
+  .cb-employee-card--active {
+    display: flex;
+  }
+
+  .cb-employee-card {
+    padding: 12px 12px 10px;
+  }
+
+  .cb-employee-card__edit-grid,
+  .cb-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}
