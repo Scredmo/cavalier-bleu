@@ -816,38 +816,46 @@ a {
   .cb-employees__header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 8px;
   }
 
   .cb-employees__mobile-slider {
     display: flex;
   }
 
-  /* Grille → carrousel horizontal */
+  /* 🔥 Grille → vrai carrousel horizontal swipable */
   .cb-employees__grid {
     display: flex;
+    flex-direction: row;
+    gap: 14px;
+    padding: 6px 4px 12px;
     overflow-x: auto;
-    gap: 12px;
-    padding: 4px 2px 10px;
+    overflow-y: visible;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x; /* iOS : autoriser le swipe horizontal */
+  }
+
+  .cb-employees__grid::-webkit-scrollbar {
+    display: none; /* pas de barre moche en bas */
   }
 
   .cb-employee-card {
-    display: flex;
-    flex-direction: column;
     flex: 0 0 82%;
     min-width: 82%;
+    max-width: 82%;
     scroll-snap-align: center;
-    transform: translateY(0) scale(0.98);
+    padding: 14px 14px 12px;
+    transform: translateY(4px) scale(0.95);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    opacity: 0.9;
   }
 
+  /* La carte “active” (celle sélectionnée par les flèches) ressort façon carte FIFA */
   .cb-employee-card--active {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.15);
-  }
-
-  .cb-employee-card {
-    padding: 12px 12px 10px;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    opacity: 1;
   }
 
   .cb-employee-card__edit-grid,
@@ -1807,18 +1815,19 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border-radius: 18px;
-  padding: 14px 14px 10px;
-  background: #ffffff;
+  border-radius: 22px;
+  padding: 16px 16px 12px;
+  background: radial-gradient(circle at top left, #eef2ff 0, #ffffff 40%, #ffffff 100%);
   box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   transform: translateY(0) scale(1);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
 .cb-employee-card--active {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+  border-color: rgba(79, 70, 229, 0.5);
 }
 
 .cb-employee-card__header {
@@ -1826,6 +1835,27 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.cb-employee-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cb-employee-card__role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cb-employee-card__section {
+  border-radius: 14px;
+  padding: 8px 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .cb-employee-card__name {
