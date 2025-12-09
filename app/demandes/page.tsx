@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+// =====================================================
+// 🔹 TYPES + CONSTANTES (Demandes)
+// =====================================================
+
 type Role = "Patron" | "Responsable" | "Barman" | "Cuisine" | "Serveur";
 
 type EmployeeBase = {
@@ -48,6 +52,10 @@ const EMPLOYEES_BASE: EmployeeBase[] = [
 const STORAGE_EMPLOYEES_KEY = "CB_EMPLOYEES";
 const STORAGE_REQUESTS_KEY = "CB_REQUESTS";
 
+// =====================================================
+// 🔹 HELPERS
+// =====================================================
+
 function todayISO(): string {
   const d = new Date();
   return d.toISOString().slice(0, 10);
@@ -65,6 +73,11 @@ function typeLabel(t: RequestType): string {
       return t;
   }
 }
+
+// =====================================================
+// 🔹 PAGE DEMANDES
+//    State -> chargement LS -> actions -> rendu
+// =====================================================
 
 export default function DemandesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -95,9 +108,11 @@ export default function DemandesPage() {
             };
           });
           setEmployees(merged);
-          if (!merged.find((e) => e.id === employeeId)) {
-            setEmployeeId(merged[0]?.id ?? "");
-          }
+          setEmployeeId((prev) =>
+            prev && merged.some((e) => e.id === prev)
+              ? prev
+              : merged[0]?.id ?? ""
+          );
           return;
         }
       }

@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+// =====================================================
+// 🔹 TYPES + CONSTANTES (Présence)
+// =====================================================
 
 type Role = "Patron" | "Responsable" | "Barman" | "Cuisine" | "Serveur";
 
@@ -78,6 +82,10 @@ const STORAGE_PLANNING_KEY = "CB_PLANNING_V2";
 const STORAGE_PRESENCE_KEY = "CB_PRESENCE_V1";
 const STORAGE_EXPENSES_KEY = "CB_EXPENSES_V1"; // à utiliser aussi sur la page Dépenses
 
+// =====================================================
+// 🔹 HELPERS
+// =====================================================
+
 function todayISO(): string {
   const d = new Date();
   return d.toISOString().slice(0, 10);
@@ -154,6 +162,11 @@ function dateToDayKey(date: string): DayKey {
       return "samedi";
   }
 }
+
+// =====================================================
+// 🔹 PAGE PRÉSENCE
+//    State -> chargement LS -> dérivés -> rendu
+// =====================================================
 
 export default function PresencePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -288,10 +301,13 @@ export default function PresencePage() {
   const getPresenceKey = (d: string, employeeId: string) =>
     `${d}::${employeeId}`;
 
-  const getRecord = (d: string, employeeId: string): PresenceRecord => {
-    const key = getPresenceKey(d, employeeId);
-    return presence[key] ?? { present: false };
-  };
+  const getRecord = useCallback(
+    (d: string, employeeId: string): PresenceRecord => {
+      const key = getPresenceKey(d, employeeId);
+      return presence[key] ?? { present: false };
+    },
+    [presence]
+  );
 
   const updateRecord = (
     d: string,
@@ -441,7 +457,7 @@ export default function PresencePage() {
       totalHours,
       totalCost,
     };
-  }, [employees, presence, date]);
+  }, [employees, date, getRecord]);
 
   // CA individuel → CA global (serveurs + bar)
   const caByRole = useMemo(() => {
@@ -468,7 +484,7 @@ export default function PresencePage() {
       caBar,
       caTotal: caService + caBar,
     };
-  }, [employees, presence, date]);
+  }, [employees, date, getRecord]);
 
   // Dépenses du jour
   const expensesForDay = useMemo(

@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+// =====================================================
+// 🔹 TYPES + CONSTANTES (Planning)
+// =====================================================
 
 type DayKey =
   | "lundi"
@@ -76,6 +80,10 @@ const DAYS: { key: DayKey; label: string }[] = [
 const STORAGE_PLANNING_KEY = "CB_PLANNING_V2";
 const STORAGE_EMPLOYEES_KEY = "CB_EMPLOYEES";
 const STORAGE_REQUESTS_KEY = "CB_REQUESTS";
+
+// =====================================================
+// 🔹 HELPERS
+// =====================================================
 
 function getPresetForMode(mode: CellMode): { start?: string; end?: string } {
   switch (mode) {
@@ -189,6 +197,11 @@ function roleSlug(role: Role): string {
       return "autre";
   }
 }
+
+// =====================================================
+// 🔹 PAGE PLANNING
+//    State -> chargement LS -> calculs -> UI
+// =====================================================
 
 export default function PlanningPage() {
   const [area, setArea] = useState<Area>("salle");
@@ -334,12 +347,15 @@ export default function PlanningPage() {
 
   const getKey = (employeeId: string, day: DayKey) => `${employeeId}-${day}`;
 
-  const getCell = (employeeId: string, day: DayKey): CellSchedule => {
-    const key = getKey(employeeId, day);
-    const val = planning[key];
-    if (!val) return { mode: "off" };
-    return val;
-  };
+  const getCell = useCallback(
+    (employeeId: string, day: DayKey): CellSchedule => {
+      const key = getKey(employeeId, day);
+      const val = planning[key];
+      if (!val) return { mode: "off" };
+      return val;
+    },
+    [planning]
+  );
 
   const updateCell = (
     employeeId: string,
@@ -356,10 +372,13 @@ export default function PlanningPage() {
     });
   };
 
-  const rolesForArea: Role[] =
-    area === "salle"
-      ? ["Patron", "Responsable", "Barman", "Serveur"]
-      : ["Cuisine"];
+  const rolesForArea: Role[] = useMemo(
+    () =>
+      area === "salle"
+        ? ["Patron", "Responsable", "Barman", "Serveur"]
+        : ["Cuisine"],
+    [area]
+  );
 
   useEffect(() => {
     const areaEmps = employees.filter((e) => rolesForArea.includes(e.role));
@@ -372,7 +391,7 @@ export default function PlanningPage() {
     setSelectedEmployeeId((prev) =>
       prev && areaEmps.some((e) => e.id === prev) ? prev : null
     );
-  }, [employees, area]);
+  }, [employees, area, rolesForArea]);
 
   const openDialog = (employeeId: string, day: DayKey) => {
     setDialogInfo({ employeeId, day });
@@ -446,10 +465,13 @@ export default function PlanningPage() {
     return set;
   }, [requests, weekDates]);
 
-  const hasApprovedLeave = (employeeId: string, day: DayKey): boolean => {
-    const date = weekDates[day];
-    return approvedLeaves.has(`${employeeId}|${date}`);
-  };
+  const hasApprovedLeave = useCallback(
+    (employeeId: string, day: DayKey): boolean => {
+      const date = weekDates[day];
+      return approvedLeaves.has(`${employeeId}|${date}`);
+    },
+    [approvedLeaves, weekDates]
+  );
 
   // === STATISTIQUES GLOBALes ===
   const stats = useMemo(() => {
@@ -490,7 +512,7 @@ export default function PlanningPage() {
       charges,
       totalCost,
     };
-  }, [employees, planning, area, approvedLeaves, chargeRate]);
+  }, [employees, chargeRate, getCell, hasApprovedLeave, rolesForArea]);
 
   // DRAG & DROP
   const handleDragStart = (employeeId: string, day: DayKey) => {

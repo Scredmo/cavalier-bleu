@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+// =====================================================
+// 🔹 TYPES & STOCKAGE (Dashboard)
+// =====================================================
+
 type Role = "Patron" | "Responsable" | "Barman" | "Cuisine" | "Serveur";
 
 type Employee = {
@@ -57,6 +61,10 @@ const STORAGE_PLANNING_KEY = "CB_PLANNING_V2";
 const STORAGE_PRESENCE_KEY = "CB_PRESENCE_V1";
 const STORAGE_REQUESTS_KEY = "CB_REQUESTS";
 const STORAGE_EXPENSES_KEY = "CB_EXPENSES_V1";
+
+// -----------------------------------------------------
+// Helpers de date / temps
+// -----------------------------------------------------
 
 type DayKey =
   | "lundi"
@@ -126,6 +134,11 @@ function getPresetForMode(mode: CellMode): { start?: string; end?: string } {
       return {};
   }
 }
+
+// =====================================================
+// 🔹 PAGE DASHBOARD
+//    State -> chargements LS -> dérivés -> rendu
+// =====================================================
 
 export default function DashboardPage() {
   const [date, setDate] = useState<string>(todayISO());

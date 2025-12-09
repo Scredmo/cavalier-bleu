@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import "../styles/globals.scss";
 
@@ -13,13 +14,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body>
-        <head>
+      <head>
         <meta
           name="viewport"
-  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
       </head>
+      <body>
         <div className="cb-root">
           
           {/* ░░ SIDEBAR (DESKTOP / TABLETTE) ░░ */}
@@ -30,40 +31,40 @@ export default function RootLayout({
             </div>
 
             <nav className="cb-sidebar__nav">
-              <a href="/" className="cb-nav-item">
+              <Link href="/" className="cb-nav-item">
                 <span className="cb-nav-item__icon">🏠</span>
                 <span className="cb-nav-item__label">Dashboard</span>
-              </a>
+              </Link>
 
-              <a href="/planning" className="cb-nav-item">
+              <Link href="/planning" className="cb-nav-item">
                 <span className="cb-nav-item__icon">📅</span>
                 <span className="cb-nav-item__label">Planning</span>
-              </a>
+              </Link>
 
-              <a href="/presence" className="cb-nav-item">
+              <Link href="/presence" className="cb-nav-item">
                 <span className="cb-nav-item__icon">🧾</span>
                 <span className="cb-nav-item__label">Présence</span>
-              </a>
+              </Link>
 
-              <a href="/employes" className="cb-nav-item">
+              <Link href="/employes" className="cb-nav-item">
                 <span className="cb-nav-item__icon">👥</span>
                 <span className="cb-nav-item__label">Employés</span>
-              </a>
+              </Link>
 
-              <a href="/demandes" className="cb-nav-item">
+              <Link href="/demandes" className="cb-nav-item">
                 <span className="cb-nav-item__icon">📨</span>
                 <span className="cb-nav-item__label">Demandes</span>
-              </a>
+              </Link>
 
-              <a href="/depenses" className="cb-nav-item">
+              <Link href="/depenses" className="cb-nav-item">
                 <span className="cb-nav-item__icon">💶</span>
                 <span className="cb-nav-item__label">Dépenses</span>
-              </a>
+              </Link>
 
-              <a href="/reservations" className="cb-nav-item">
+              <Link href="/reservations" className="cb-nav-item">
                 <span className="cb-nav-item__icon">🍽️</span>
                 <span className="cb-nav-item__label">Réservations</span>
-              </a>
+              </Link>
             </nav>
 
             <div className="cb-sidebar__footer">
@@ -73,12 +74,12 @@ export default function RootLayout({
 
           {/* ░░ NAV FLOTTANTE MOBILE ░░ */}
           <nav className="cb-bottom-nav">
-            <a href="/" className="cb-bottom-nav__item">🏠</a>
-            <a href="/planning" className="cb-bottom-nav__item">📅</a>
-            <a href="/presence" className="cb-bottom-nav__item">🧾</a>
-            <a href="/employes" className="cb-bottom-nav__item">👥</a>
-            <a href="/depenses" className="cb-bottom-nav__item">💶</a>
-            <a href="/reservations" className="cb-bottom-nav__item">🍽️</a>
+            <Link href="/" className="cb-bottom-nav__item">🏠</Link>
+            <Link href="/planning" className="cb-bottom-nav__item">📅</Link>
+            <Link href="/presence" className="cb-bottom-nav__item">🧾</Link>
+            <Link href="/employes" className="cb-bottom-nav__item">👥</Link>
+            <Link href="/depenses" className="cb-bottom-nav__item">💶</Link>
+            <Link href="/reservations" className="cb-bottom-nav__item">🍽️</Link>
           </nav>
 
           {/* ░░ CONTENU PRINCIPAL ░░ */}

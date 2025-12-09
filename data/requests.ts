@@ -1,5 +1,3 @@
-import type { Employee } from './employees';
-
 export type RequestType = 'retard' | 'conge' | 'absence';
 
 export type EmployeeRequest = {

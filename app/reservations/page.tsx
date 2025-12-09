@@ -1,5 +1,10 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+
+// =====================================================
+// 🔹 TYPES + CONSTANTES (Réservations)
+// =====================================================
+
 const navPages = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Planning', href: '/planning' },
@@ -9,6 +14,10 @@ const navPages = [
   { label: 'Dépenses', href: '/depenses' },
   { label: 'Demandes', href: '/demandes' },
 ];
+
+// -----------------------------------------------------
+// Helpers d'affichage
+// -----------------------------------------------------
 type Service = 'Midi' | 'Soir';
 type Statut = 'Confirmée' | 'En attente' | 'Annulée' | 'No-show';
 
@@ -94,6 +103,10 @@ const reservationsDuJour: Reservation[] = [
   },
 ];
 
+// =====================================================
+// 🔹 PAGE RÉSERVATIONS
+//    State -> filtrage -> rendu
+// =====================================================
 export default function ReservationsPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -169,16 +182,6 @@ export default function ReservationsPage() {
     marginBottom: 14,
   };
 
-  const retourBtnStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: '#001A33',
-    background: 'white',
-    padding: '6px 10px',
-    borderRadius: 999,
-    textDecoration: 'none',
-    border: '1px solid rgba(0,0,0,0.12)',
-  };
-
   const statsRowStyle: React.CSSProperties = {
     display: 'flex',
     gap: 10,
@@ -236,16 +239,6 @@ export default function ReservationsPage() {
     borderBottom: '1px solid #EEF0F4',
     alignItems: 'center',
   };
-
-  const serviceTag = (service: Service): React.CSSProperties => ({
-    display: 'inline-block',
-    fontSize: 10,
-    borderRadius: 999,
-    padding: '2px 6px',
-    background: service === 'Midi' ? '#DBEAFE' : '#F5E1FF',
-    color: service === 'Midi' ? '#1D4ED8' : '#7E22CE',
-    marginTop: 2,
-  });
 
   const actionButtonStyle = (
     borderColor: string,

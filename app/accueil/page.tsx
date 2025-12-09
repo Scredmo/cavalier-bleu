@@ -1,6 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+
+// =====================================================
+// 🔹 TYPES + CONSTANTES (Accueil du jour)
+// =====================================================
 const navPages = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Planning', href: '/planning' },
@@ -69,6 +73,10 @@ const tachesInit: Tache[] = [
   },
 ];
 
+// =====================================================
+// 🔹 PAGE ACCUEIL
+//    State -> filtres -> rendu sections
+// =====================================================
 export default function AccueilPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [service, setService] = useState<'Tous' | Service>('Tous');
@@ -142,16 +150,6 @@ export default function AccueilPage() {
     marginBottom: 14,
   };
 
-  const retourBtnStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: '#001A33',
-    background: 'white',
-    padding: '6px 10px',
-    borderRadius: 999,
-    textDecoration: 'none',
-    border: '1px solid rgba(0,0,0,0.12)',
-  };
-
   const chipsRow: React.CSSProperties = {
     display: 'flex',
     gap: 6,
@@ -216,18 +214,6 @@ export default function AccueilPage() {
       display: 'inline-block',
       marginTop: 2,
     };
-  };
-
-  const lienRapide: React.CSSProperties = {
-    display: 'inline-block',
-    padding: '7px 10px',
-    borderRadius: 999,
-    background: '#001A33',
-    color: '#FFFFFF',
-    fontSize: 11,
-    textDecoration: 'none',
-    marginRight: 6,
-    marginBottom: 6,
   };
 
   return (

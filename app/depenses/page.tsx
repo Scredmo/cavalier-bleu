@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+// =====================================================
+// 🔹 TYPES + CONSTANTES (Dépenses)
+// =====================================================
+
 type ExpenseItem = {
   id: string;
   date: string; // "YYYY-MM-DD"
@@ -11,10 +15,19 @@ type ExpenseItem = {
 
 const STORAGE_EXPENSES_KEY = "CB_EXPENSES_V1";
 
+// =====================================================
+// 🔹 HELPERS
+// =====================================================
+
 function todayISO(): string {
   const d = new Date();
   return d.toISOString().slice(0, 10);
 }
+
+// =====================================================
+// 🔹 PAGE DÉPENSES
+//    State -> chargement LS -> filtrage -> rendu
+// =====================================================
 
 export default function DepensesPage() {
   const [date, setDate] = useState<string>(todayISO());

@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+// =====================================================
+// 🔹 TYPES + CONSTANTES (Employés)
+// =====================================================
+
 type Role = "Patron" | "Responsable" | "Barman" | "Cuisine" | "Serveur";
 
 type Employee = {
@@ -32,6 +36,10 @@ type StoredEmployee = Employee & {
 
 const STORAGE_EMPLOYEES_KEY = "CB_EMPLOYEES";
 const STORAGE_PRESENCE_KEY = "CB_PRESENCE_V1";
+
+// -----------------------------------------------------
+// Données de base (fallback)
+// -----------------------------------------------------
 
 type PresenceRecord = {
   present: boolean;
@@ -227,6 +235,9 @@ const DEFAULT_EMPLOYEES: Employee[] = [
   },
 ];
 
+// -----------------------------------------------------
+// Helpers temps + formattage
+// -----------------------------------------------------
 function parseHours(start?: string, end?: string): number {
   if (!start || !end) return 0;
   const [sh, sm] = start.split(":").map(Number);
@@ -294,6 +305,10 @@ const emptyForm: FormState = {
   hireDate: "",
 };
 
+// =====================================================
+// 🔹 PAGE EMPLOYÉS
+//    State -> chargement LS -> dérivés -> rendu
+// =====================================================
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [presence, setPresence] = useState<PresenceState>({});
@@ -432,7 +447,7 @@ export default function EmployeesPage() {
     const diff = monthlyHours - contract;
 
     let pillClass = "cb-employee__indicator cb-employee__indicator--none";
-    let pillText = `${monthlyHours.toFixed(1)} h / ${contract} h`;
+    const pillText = `${monthlyHours.toFixed(1)} h / ${contract} h`;
 
     if (monthlyHours === 0) {
       pillClass = "cb-employee__indicator cb-employee__indicator--none";
@@ -574,6 +589,17 @@ export default function EmployeesPage() {
     );
   };
 
+  // Ajuste l'index quand la liste change (suppr / ajout)
+  useEffect(() => {
+    if (employees.length === 0) {
+      setMobileIndex(0);
+      return;
+    }
+    setMobileIndex((prev) =>
+      prev >= employees.length ? employees.length - 1 : prev
+    );
+  }, [employees.length]);
+
   /* -----------------------------
      8. Rendu
   ----------------------------- */
@@ -618,6 +644,14 @@ export default function EmployeesPage() {
           >
             →
           </button>
+          <div className="cb-employees__slider-progress" aria-hidden="true">
+            <div
+              className="cb-employees__slider-progress-bar"
+              style={{
+                width: `${employees.length ? ((mobileIndex + 1) / employees.length) * 100 : 0}%`,
+              }}
+            />
+          </div>
         </div>
       )}
 
