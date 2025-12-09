@@ -1,6 +1,10 @@
-/* ===========================
-   RESET
-=========================== */
+/* =======================================================
+   BLOC 1 — RESET GLOBAL + LAYOUT + NAVIGATION + BASE UI
+   ======================================================= */
+
+/* -------------------------------------------------------
+   1.1 — RESET NAVIGATEUR & BASE TYPO
+   ------------------------------------------------------- */
 
 *,
 *::before,
@@ -25,9 +29,9 @@ a {
   text-decoration: none;
 }
 
-/* ===========================
-   LAYOUT GLOBAL
-=========================== */
+/* -------------------------------------------------------
+   1.2 — LAYOUT GLOBAL
+   ------------------------------------------------------- */
 
 .cb-root {
   min-height: 100vh;
@@ -35,9 +39,9 @@ a {
   grid-template-columns: 240px minmax(0, 1fr);
 }
 
-/* ===========================
-   SIDEBAR (DESKTOP)
-=========================== */
+/* -------------------------------------------------------
+   1.3 — SIDEBAR (DESKTOP)
+   ------------------------------------------------------- */
 
 .cb-sidebar {
   background: linear-gradient(180deg, #020617, #0b1120);
@@ -73,6 +77,8 @@ a {
   text-transform: uppercase;
 }
 
+/* ---- Items de navigation ---- */
+
 .cb-sidebar__nav {
   display: flex;
   flex-direction: column;
@@ -97,10 +103,6 @@ a {
   font-size: 16px;
 }
 
-.cb-nav-item__label {
-  font-size: 13px;
-}
-
 .cb-nav-item:hover {
   background: rgba(129, 140, 248, 0.25);
   transform: translateX(1px);
@@ -115,13 +117,9 @@ a {
   color: #9ca3af;
 }
 
-.cb-sidebar__role {
-  opacity: 0.85;
-}
-
-/* ===========================
-   TOPBAR & MAIN
-=========================== */
+/* -------------------------------------------------------
+   1.4 — TOPBAR & MAIN PAGE WRAPPER
+   ------------------------------------------------------- */
 
 .cb-main {
   min-height: 100vh;
@@ -157,26 +155,15 @@ a {
   color: #6b7280;
 }
 
-.cb-topbar__right {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.cb-topbar__user {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.04);
-}
-
 .cb-content {
   padding: 14px 20px 70px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-/* ===========================
-   BOTTOM NAV (MOBILE)
-=========================== */
+/* -------------------------------------------------------
+   1.5 — NAVIGATION MOBILE FLOTTANTE
+   ------------------------------------------------------- */
 
 .cb-bottom-nav {
   position: fixed;
@@ -214,24 +201,9 @@ a {
   transform: translateY(-1px);
 }
 
-.cb-bottom-nav__dot {
-  position: absolute;
-  bottom: 3px;
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: #e5e7eb;
-}
-/* S'assurer que la nav mobile reste derrière les modales */
-.cb-bottom-nav,
-.cb-mobile-nav,
-.cb-nav-floating {
-  z-index: 20;
-}
-
-/* ===========================
-   CARDS & BUTTONS
-=========================== */
+/* -------------------------------------------------------
+   1.6 — CARDS & BUTTONS (base UI réutilisable partout)
+   ------------------------------------------------------- */
 
 .cb-card {
   background: #ffffff;
@@ -271,9 +243,34 @@ a {
   transform: translateY(-1px);
 }
 
-/* ===========================
-   PLANNING – TABLE DESKTOP
-=========================== */
+/* -------------------------------------------------------
+   1.7 — RESPONSIVE GLOBAL
+   ------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .cb-root {
+    grid-template-columns: 1fr;
+  }
+
+  .cb-sidebar {
+    display: none;
+  }
+
+  .cb-bottom-nav {
+    display: flex;
+  }
+
+  .cb-content {
+    padding: 10px 14px 80px;
+  }
+}
+/* =======================================================
+   BLOC 2 — PLANNING + MODAL + MOBILE + PRÉSENCE + DÉPENSES
+   ======================================================= */
+
+/* -------------------------------------------------------
+   2.1 — PLANNING (TABLE DESKTOP)
+   ------------------------------------------------------- */
 
 .cb-planning__table-wrapper {
   width: 100%;
@@ -302,19 +299,17 @@ a {
 .cb-planning__section-row td {
   padding: 4px 10px;
   font-size: 11px;
-  text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #9ca3af;
   background: #f8fafc;
+  text-transform: uppercase;
 }
 
 .cb-planning__employee-cell {
   padding: 8px 10px;
-  text-align: left;
-  font-weight: 500;
-  color: #0f172a;
-  border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 500;
 }
 
 .cb-planning__cell {
@@ -325,95 +320,9 @@ a {
   cursor: pointer;
 }
 
-.cb-planning-summary {
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.cb-planning-summary__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.cb-planning-summary__badge {
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: #eef2ff;
-  color: #3730a3;
-  font-weight: 600;
-}
-
-.cb-planning-summary__hint {
-  color: #6b7280;
-  font-size: 11px;
-}
-
-.cb-planning-summary__numbers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.cb-planning-summary__item {
-  min-width: 130px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-}
-
-.cb-planning-summary__item--highlight {
-  background: #0f172a;
-  color: #f9fafb;
-  border-color: transparent;
-}
-
-.cb-planning-summary__label {
-  font-size: 11px;
-  color: #6b7280;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.cb-planning-summary__item--highlight .cb-planning-summary__label {
-  color: #cbd5f5;
-}
-
-.cb-planning-summary__value {
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.cb-planning-summary__controls {
-  margin-top: 4px;
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.cb-planning-summary__charge-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.cb-planning-summary__charge-label input {
-  width: 56px;
-  padding: 3px 6px;
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  font-size: 12px;
-  text-align: right;
-}
-
-
-/* ===========================
-   PILLS (planning)
-=========================== */
+/* -------------------------------------------------------
+   2.2 — PLANNING : SHIFT PILLS
+   ------------------------------------------------------- */
 
 .cb-planning__shift-pill {
   border-radius: 999px;
@@ -429,7 +338,6 @@ a {
   border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
-/* couleurs par mode */
 .cb-planning__shift-pill--off {
   background: #f9fafb;
   color: #9ca3af;
@@ -463,22 +371,15 @@ a {
 .cb-planning__shift-hours {
   font-size: 11px;
   font-weight: 600;
-  opacity: 0.9;
 }
 
-/* ===========================
-   MODAL SHIFT (popup)
-=========================== */
+/* -------------------------------------------------------
+   2.3 — PLANNING : MODAL SHIFT (popup)
+   ------------------------------------------------------- */
 
 @keyframes cb-modal-pop {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .cb-modal-backdrop {
@@ -504,7 +405,6 @@ a {
 .cb-modal__title {
   font-size: 15px;
   font-weight: 600;
-  margin-bottom: 4px;
 }
 
 .cb-modal__subtitle {
@@ -519,21 +419,14 @@ a {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   overflow: hidden;
-  margin-bottom: 10px;
 }
 
 .cb-modal__list-btn {
-  width: 100%;
-  border: none;
-  background: #ffffff;
   padding: 8px 12px;
   text-align: left;
   font-size: 13px;
-  cursor: pointer;
-}
-
-.cb-modal__list-btn + .cb-modal__list-btn {
-  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+  border: none;
 }
 
 .cb-modal__list-btn:hover {
@@ -543,39 +436,16 @@ a {
 .cb-modal__actions {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
-.cb-modal__secondary {
-  flex: 1;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  font-size: 12px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.cb-modal__primary {
-  flex: 1;
-  border-radius: 999px;
-  border: none;
-  background: #0f172a;
-  color: #ffffff;
-  font-size: 12px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-/* ===========================
-   LISTE EMPLOYÉS MOBILE
-=========================== */
+/* -------------------------------------------------------
+   2.4 — PLANNING MOBILE : liste des employés
+   ------------------------------------------------------- */
 
 .cb-planning__mobile-employees {
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .cb-planning__mobile-emp-row {
@@ -585,66 +455,33 @@ a {
   border: 1px solid #e5e7eb;
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
   display: flex;
-  align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
-    border-color 0.12s ease, background 0.12s ease;
 }
 
 .cb-planning__mobile-emp-row--active {
   border-color: #4f46e5;
   box-shadow: 0 10px 24px rgba(79, 70, 229, 0.35);
   background: linear-gradient(135deg, #eef2ff, #ffffff);
-  transform: translateY(-1px);
 }
 
-.cb-role-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-}
-
-.cb-role-dot--patron {
-  background: #eab308;
-}
-.cb-role-dot--responsable {
-  background: #3b82f6;
-}
-.cb-role-dot--barman {
-  background: #0ea5e9;
-}
-.cb-role-dot--cuisine {
-  background: #22c55e;
-}
-.cb-role-dot--serveur {
-  background: #f97316;
-}
-
-/* ===========================
-   PRINT (PDF équipe entière)
-=========================== */
-
-.cb-planning-main {
-}
+/* -------------------------------------------------------
+   2.5 — PRINT (PDF planning équipe)
+   ------------------------------------------------------- */
 
 .cb-planning__print-wrapper {
   display: none;
 }
 
 @media print {
-  body {
-    background: #ffffff !important;
-  }
+  body { background: #ffffff !important; }
 
   .cb-sidebar,
   .cb-topbar,
   .cb-bottom-nav,
-  .cb-planning-main,
   .cb-button,
-  .cb-planning__header,
-  .cb-modal-backdrop,
-  .cb-planning-summary {
+  .cb-planning-summary,
+  .cb-planning-main {
     display: none !important;
   }
 
@@ -657,81 +494,13 @@ a {
   }
 }
 
-/* ===========================
-   RESPONSIVE
-=========================== */
+/* -------------------------------------------------------
+   2.6 — PRÉSENCE : tableaux + inputs + affichage
+   ------------------------------------------------------- */
 
-@media (max-width: 900px) {
-  .cb-root {
-    grid-template-columns: 1fr;
-  }
+.cb-presence-main { margin-top: 8px; }
 
-  .cb-sidebar {
-    display: none;
-  }
-
-  .cb-content {
-    padding: 10px 14px 80px;
-  }
-
-  .cb-bottom-nav {
-    display: flex;
-  }
-}
-/* ====== PRÉSENCE (RÉCAP + TABLEAU) ====== */
-
-.cb-presence__header {
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.cb-presence__header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.cb-presence-summary {
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.cb-presence-summary__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.cb-presence-summary__label {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.cb-presence-summary__value {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.cb-presence-summary__hint {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-/* Tableau écran */
-
-.cb-presence-main {
-  margin-top: 8px;
-}
-
-.cb-presence__table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-}
+.cb-presence__table-wrapper { width: 100%; overflow-x: auto; }
 
 .cb-presence__table {
   width: 100%;
@@ -743,7 +512,6 @@ a {
 .cb-presence__table td {
   padding: 8px 10px;
   border-bottom: 1px solid #e5e7eb;
-  text-align: left;
 }
 
 .cb-presence__employee-cell {
@@ -752,16 +520,7 @@ a {
   gap: 8px;
 }
 
-.cb-presence__employee-name {
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.cb-presence__employee-role {
-  font-size: 11px;
-  color: #6b7280;
-}
-
+/* Inputs */
 .cb-presence__time-input,
 .cb-presence__note-input,
 .cb-presence__ca-input {
@@ -772,180 +531,35 @@ a {
   font-size: 12px;
 }
 
-.cb-presence__ca-input {
-  max-width: 110px;
-}
+.cb-presence__ca-input { max-width: 110px; }
 
-.cb-presence__ca-disabled {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.cb-presence__hours-cell {
-  font-weight: 600;
-  font-size: 12px;
-}
-
+/* Checkbox */
 .cb-presence__checkbox {
-  position: relative;
   display: inline-flex;
-  align-items: center;
-  cursor: pointer;
+  position: relative;
 }
-
-.cb-presence__checkbox input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
+.cb-presence__checkbox input { opacity: 0; position: absolute; }
 .cb-presence__checkbox span {
-  width: 18px;
-  height: 18px;
+  width: 18px; height: 18px;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
   background: #f9fafb;
-  display: inline-block;
+  border: 1px solid #d1d5db;
 }
-
 .cb-presence__checkbox input:checked + span {
   background: #22c55e;
   border-color: #16a34a;
 }
-@media (max-width: 768px) {
-  .cb-employees__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
 
-  .cb-employees__mobile-slider {
-    display: flex;
-  }
+/* -------------------------------------------------------
+   2.7 — DÉPENSES
+   ------------------------------------------------------- */
 
-  /* 🔥 Grille → vrai carrousel horizontal swipable */
-  .cb-employees__grid {
-    display: flex;
-    flex-direction: row;
-    gap: 14px;
-    padding: 6px 4px 12px;
-    overflow-x: auto;
-    overflow-y: visible;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x; /* iOS : autoriser le swipe horizontal */
-  }
-
-  .cb-employees__grid::-webkit-scrollbar {
-    display: none; /* pas de barre moche en bas */
-  }
-
-  .cb-employee-card {
-    flex: 0 0 82%;
-    min-width: 82%;
-    max-width: 82%;
-    scroll-snap-align: center;
-    padding: 14px 14px 12px;
-    transform: translateY(4px) scale(0.95);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-    opacity: 0.9;
-  }
-
-  /* La carte “active” (celle sélectionnée par les flèches) ressort façon carte FIFA */
-  .cb-employee-card--active {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
-    opacity: 1;
-  }
-
-  .cb-employee-card__edit-grid,
-  .cb-modal__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ====== VERSION PDF / IMPRESSION ====== */
-
-.cb-presence-print {
-  display: none;
-  font-size: 12px;
-}
-
-.cb-presence-print__subtitle {
-  font-size: 11px;
-  color: #6b7280;
-  margin-bottom: 2px;
-}
-
-.cb-presence-print__block {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-}
-
-.cb-presence-print__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 11px;
-  padding: 2px 0;
-}
-
-.cb-presence-print__row--total {
-  margin-top: 4px;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 6px;
-}
-
-.cb-presence-print__row--note {
-  margin-top: 6px;
-  font-style: italic;
-}
-
-.cb-presence-print__table-wrapper {
-  margin-top: 10px;
-}
-
-.cb-presence-print__table th,
-.cb-presence-print__table td {
-  font-size: 11px;
-}
-
-/* Impression : on masque toute l'UI, on garde uniquement la feuille */
-
-@media print {
-  .cb-sidebar,
-  .cb-topbar,
-  .cb-bottom-nav,
-  .cb-planning__header,
-  .cb-presence-summary,
-  .cb-presence-main {
-    display: none !important;
-  }
-
-  .cb-content {
-    padding: 0 !important;
-  }
-
-  .cb-presence-print {
-    display: block !important;
-    background: #ffffff;
-  }
-}
-
-/* ====== DÉPENSES ====== */
-
-.cb-expenses-form {
-  margin-bottom: 16px;
-}
+.cb-expenses-form { margin-bottom: 16px; }
 
 .cb-expenses-form__row {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  align-items: flex-end;
 }
 
 .cb-expenses-form__field {
@@ -955,11 +569,6 @@ a {
   gap: 4px;
 }
 
-.cb-expenses-form__field label {
-  font-size: 12px;
-  color: #6b7280;
-}
-
 .cb-expenses-form__field input {
   border-radius: 999px;
   border: 1px solid #d1d5db;
@@ -967,42 +576,13 @@ a {
   font-size: 13px;
 }
 
-.cb-expenses-form__field--small {
-  max-width: 140px;
-}
-
-.cb-expenses-form__add {
-  white-space: nowrap;
-}
-
-.cb-expenses-form__hint {
-  margin-top: 8px;
-  font-size: 11px;
-  color: #9ca3af;
-}
-
 .cb-expenses-list__header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 8px;
   margin-bottom: 8px;
 }
 
-.cb-expenses-list__total {
-  font-size: 13px;
-  color: #111827;
-}
-
-.cb-expenses-empty {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.cb-expenses-table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-}
+.cb-expenses-table-wrapper { width: 100%; overflow-x: auto; }
 
 .cb-expenses-table {
   width: 100%;
@@ -1014,98 +594,281 @@ a {
 .cb-expenses-table td {
   padding: 8px 10px;
   border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-}
-
-.cb-expenses-table__actions {
-  text-align: right;
 }
 
 .cb-chip--danger {
   background: #fee2e2;
   color: #b91c1c;
 }
-
 .cb-chip--danger:hover {
   background: #fecaca;
 }
+/* =======================================================
+   BLOC 3 — EMPLOYÉS (CARDS, MODAL, SLIDER FIFA)
+   ======================================================= */
 
-.cb-expenses-history {
-  margin-top: 12px;
-}
+/* -------------------------------------------------------
+   3.1 — STRUCTURE GLOBALE DE LA PAGE EMPLOYÉS
+   ------------------------------------------------------- */
 
-.cb-expenses-history__chips {
+.cb-employees {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* ====== EMPLOYÉS ====== */
-
-.cb-employees-card {
-  margin-top: 8px;
-}
-
-.cb-employees-header {
+.cb-employees__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 12px;
 }
 
+/* Résumé du nombre d’employés */
 .cb-employees-header__summary {
   font-size: 13px;
   color: #111827;
 }
 
 .cb-employees-header__summary-unit {
-  font-weight: 400;
   font-size: 11px;
   color: #6b7280;
   margin-left: 2px;
 }
+/* -------------------------------------------------------
+   3.2 — GRILLE DESKTOP
+   ------------------------------------------------------- */
 
-.cb-employees-table-wrapper {
-  width: 100%;
-  overflow-x: auto;
+.cb-employees__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.cb-employees-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+/* Carte employé (style premium) */
+.cb-employee-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 22px;
+  padding: 16px 16px 12px;
+
+  background: radial-gradient(circle at top left,
+    #eef2ff 0,
+    #ffffff 40%,
+    #ffffff 100%
+  );
+
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+
+  transform: translateY(0) scale(1);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
-.cb-employees-table th,
-.cb-employees-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
+/* Carte sélectionnée */
+.cb-employee-card--active {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+  border-color: rgba(79, 70, 229, 0.5);
 }
+/* -------------------------------------------------------
+   3.3 — EN-TÊTE DE CARTE
+   ------------------------------------------------------- */
 
-.cb-employees-name-cell {
+.cb-employee-card__header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
 }
 
-.cb-employees-rate-input {
-  width: 120px;
-  max-width: 100%;
+.cb-employee-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cb-employee-card__role {
+  font-size: 12px;
+  color: #6b7280;
+}
+/* -------------------------------------------------------
+   3.4 — SECTIONS D'INFOS
+   ------------------------------------------------------- */
+
+.cb-employee-card__section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.cb-employee-card__section-header {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.cb-employee-card__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  align-items: baseline;
+}
+
+.cb-employee-card__label {
+  color: #6b7280;
+}
+
+.cb-employee-card__value {
+  color: #111827;
+  font-weight: 500;
+}
+/* -------------------------------------------------------
+   3.5 — INDICATEUR D'ÉTAT DES HEURES
+   ------------------------------------------------------- */
+
+.cb-employee-card__row--indicator {
+  align-items: center;
+}
+
+.cb-employee__indicator {
+  padding: 3px 10px;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
-  padding: 4px 8px;
-  font-size: 13px;
-}
-
-.cb-employees-hint {
-  margin-top: 8px;
   font-size: 11px;
-  color: #9ca3af;
+  font-weight: 600;
 }
 
-/* ====== DASHBOARD ====== */
+.cb-employee__indicator--none  { background: #f3f4f6; color: #6b7280; }
+.cb-employee__indicator--low   { background: #fee2e2; color: #b91c1c; }
+.cb-employee__indicator--almost{ background: #fef3c7; color: #92400e; }
+.cb-employee__indicator--ok    { background: #dcfce7; color: #166534; }
+.cb-employee__indicator--extra { background: #bbf7d0; color: #166534; }
+/* -------------------------------------------------------
+   3.6 — FOOTER & ACTIONS
+   ------------------------------------------------------- */
+
+.cb-employee-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cb-employee-card__footer--edit {
+  justify-content: flex-end;
+}
+
+.cb-employee-card__delete {
+  margin-left: auto;
+  font-size: 12px;
+  color: #b91c1c;
+}
+/* -------------------------------------------------------
+   3.7 — DÉTAILS (OPEN / CLOSE)
+   ------------------------------------------------------- */
+
+.cb-employee-card__details {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.22s ease, opacity 0.22s ease;
+}
+
+.cb-employee-card__details--open {
+  max-height: 220px;
+  opacity: 1;
+}
+
+.cb-employee-card__details-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+}
+/* -------------------------------------------------------
+   3.8 — MODAL (AJOUT / MODIFICATION)
+   ------------------------------------------------------- */
+
+.cb-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: max(env(safe-area-inset-top), 24px);
+}
+
+.cb-modal__content {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 16px 18px;
+  box-shadow: 0 24px 60px rgba(15,23,42,0.35);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+/* =======================================================
+   3.9 — VERSION MOBILE + SLIDER STYLE FIFA
+   ======================================================= */
+
+/* Barre de sélection (flèches + nom) */
+.cb-employees__mobile-slider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148,163,184,0.5);
+}
+
+/* Grille transformée en carrousel */
+@media (max-width: 768px) {
+  .cb-employees__grid {
+    display: flex;
+    flex-direction: row;
+    gap: 14px;
+
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  .cb-employees__grid::-webkit-scrollbar { display: none; }
+
+  /* Carte style FUT */
+  .cb-employee-card {
+    flex: 0 0 82%;
+    min-width: 82%;
+    max-width: 82%;
+    display: flex;
+    scroll-snap-align: center;
+
+    transform: translateY(4px) scale(0.95);
+    opacity: 0.9;
+    transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  /* Carte active (swipe) */
+  .cb-employee-card--active {
+    transform: translateY(-2px) scale(1.04);
+    opacity: 1;
+    box-shadow: 0 26px 55px rgba(15,23,42,0.35);
+    border-color: rgba(79, 70, 229, 0.5);
+  }
+}
+/* =======================================================
+   BLOC 4 — DASHBOARD (HEADER + CARDS + STATS + REQUESTS)
+   ======================================================= */
+
+/* -------------------------------------------------------
+   4.1 — HEADER DU DASHBOARD
+   ------------------------------------------------------- */
 
 .cb-dashboard-header {
   margin-bottom: 16px;
@@ -1126,6 +889,10 @@ a {
   color: #4b5563;
 }
 
+/* -------------------------------------------------------
+   4.2 — GRILLE DES CARTES DU DASHBOARD
+   ------------------------------------------------------- */
+
 .cb-dashboard-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1134,9 +901,13 @@ a {
 
 @media (max-width: 900px) {
   .cb-dashboard-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 }
+
+/* -------------------------------------------------------
+   4.3 — CARTE DU DASHBOARD
+   ------------------------------------------------------- */
 
 .cb-dashboard-card {
   display: flex;
@@ -1148,7 +919,6 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 8px;
 }
 
 .cb-dashboard-card__title {
@@ -1172,6 +942,10 @@ a {
   text-decoration: underline;
 }
 
+/* -------------------------------------------------------
+   4.4 — STATS À L’INTÉRIEUR DES CARTES
+   ------------------------------------------------------- */
+
 .cb-dashboard-card__stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1180,7 +954,7 @@ a {
 
 @media (max-width: 640px) {
   .cb-dashboard-card__stats {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1194,6 +968,10 @@ a {
   font-weight: 700;
 }
 
+/* -------------------------------------------------------
+   4.5 — LISTE DES DEMANDES RÉCENTES
+   ------------------------------------------------------- */
+
 .cb-dashboard-requests {
   margin-top: 8px;
   padding: 0;
@@ -1205,7 +983,6 @@ a {
 .cb-dashboard-requests li {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
   padding: 2px 0;
 }
 
@@ -1221,8 +998,14 @@ a {
   font-style: italic;
   color: #6b7280;
 }
+/* =======================================================
+   BLOC 5 — DEMANDES (formulaire + liste + historique)
+   ======================================================= */
 
-/* ====== DEMANDES (page /demandes) ====== */
+
+/* -------------------------------------------------------
+   5.1 — FORMULAIRE D’AJOUT D’UNE DEMANDE
+   ------------------------------------------------------- */
 
 .cb-requests-form {
   margin-bottom: 16px;
@@ -1231,7 +1014,6 @@ a {
 .cb-requests-form__grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: auto;
   gap: 12px;
 }
 
@@ -1280,13 +1062,15 @@ a {
   color: #9ca3af;
 }
 
-/* Liste des demandes en attente */
+
+/* -------------------------------------------------------
+   5.2 — LISTE DES DEMANDES EN ATTENTE
+   ------------------------------------------------------- */
 
 .cb-requests-list__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
   margin-bottom: 8px;
 }
 
@@ -1308,6 +1092,11 @@ a {
   gap: 10px;
 }
 
+
+/* -------------------------------------------------------
+   5.3 — CARTE INDIVIDUELLE D’UNE DEMANDE
+   ------------------------------------------------------- */
+
 .cb-request-card {
   border-radius: 14px;
   border: 1px solid #e5e7eb;
@@ -1319,7 +1108,6 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
   margin-bottom: 4px;
 }
 
@@ -1353,7 +1141,10 @@ a {
   padding-inline: 10px;
 }
 
-/* Chips d’état */
+
+/* -------------------------------------------------------
+   5.4 — CHIPS D’ÉTAT (warning / danger / info…)
+   ------------------------------------------------------- */
 
 .cb-chip--warning {
   background: #fef3c7;
@@ -1364,7 +1155,19 @@ a {
   background: #fde68a;
 }
 
-/* Historique des congés acceptés */
+.cb-chip--danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.cb-chip--danger:hover {
+  background: #fecaca;
+}
+
+
+/* -------------------------------------------------------
+   5.5 — HISTORIQUE DES DEMANDES ACCEPTÉES
+   ------------------------------------------------------- */
 
 .cb-requests-history {
   margin-top: 12px;
@@ -1372,7 +1175,6 @@ a {
 
 .cb-requests-history__list {
   list-style: none;
-  margin: 0;
   padding: 0;
   display: grid;
   gap: 6px;
@@ -1389,12 +1191,16 @@ a {
   color: #6b7280;
 }
 
-/* Responsive */
+
+/* -------------------------------------------------------
+   5.6 — RESPONSIVE
+   ------------------------------------------------------- */
 
 @media (max-width: 900px) {
   .cb-requests-form__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
+
   .cb-requests-form__field--small {
     max-width: none;
   }
@@ -1405,99 +1211,77 @@ a {
     grid-template-columns: 1fr;
   }
 }
-/* ====== Mobile : éviter le zoom iOS sur les inputs ====== */
-@media (max-width: 768px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-  }
-}
+/* =======================================================
+   BLOC 6 — RESPONSIVE GLOBAL (MOBILE + ANTI-ZOOM + LAYOUT)
+   ======================================================= */
 
-/* ====== Global : pas de scroll horizontal ====== */
-html,
-body {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Pour éviter que le contenu pousse la mise en page en largeur */
-.cb-main {
-  min-width: 0;
-}
-
-/* Ajuster les marges en mobile pour que rien ne déborde */
-@media (max-width: 768px) {
-  .cb-content {
-    padding-inline: 12px;
-  }
-
-  .cb-card {
-    border-radius: 14px;
-  }
-}
-
-/* Empêche tout débordement horizontal en mobile */
-@media (max-width: 768px) {
-  .cb-planning__mobile-view,
-  .cb-card,
-  .cb-content,
-  .cb-main {
-    max-width: 100%;
-    width: 100%;
-    overflow-x: hidden !important;
-  }
-}
-
-/* Ajuste les pills horaires en mobile */
-@media (max-width: 768px) {
-  .cb-shift-pill {
-    max-width: 85%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
+/* -------------------------------------------------------
+   6.1 — ANTI-ZOOM AUTOMATIQUE SUR iOS
+   iPhone zoome si un input a une font-size < 16px
+   ------------------------------------------------------- */
 
 @media (max-width: 768px) {
   input,
   select,
   textarea {
     font-size: 16px !important;
-    touch-action: manipulation;
+    touch-action: manipulation; /* évite des zooms & comportements bizarres */
   }
 }
 
-/* ====== LAYOUT MOBILE GLOBAL ====== */
+
+/* -------------------------------------------------------
+   6.2 — ANTI-SCROLL HORIZONTAL GLOBAL
+   Empêche le débordement des pages
+   ------------------------------------------------------- */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.cb-main {
+  min-width: 0;
+}
 
 @media (max-width: 768px) {
-  /* Le layout passe en une seule colonne */
+  .cb-main,
+  .cb-content,
+  .cb-card {
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+}
+
+
+/* -------------------------------------------------------
+   6.3 — LAYOUT MOBILE GLOBAL
+   Sidebar -> masque
+   Topbar -> compact
+   Content -> respire (padding)
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
   .cb-root {
-    display: grid;
     grid-template-columns: 1fr;
     min-height: 100vh;
   }
 
-  /* On cache la sidebar en mobile (on garde la nav flottante) */
   .cb-sidebar {
-    display: none;
+    display: none; /* remplacée par la nav mobile flottante */
   }
 
-  /* Zone principale : un peu de marge en bas pour la nav flottante */
   .cb-main {
-    min-width: 0;
-    padding: 8px 0 80px;
+    padding: 8px 0 80px; /* place pour la nav mobile */
   }
 
-  /* Contenu centré, sans débordement */
   .cb-content {
     padding-inline: 12px;
-    max-width: 100%;
   }
 
-  /* Topbar plus compacte */
   .cb-topbar {
-    padding-inline: 16px;
-    padding-block: 8px;
+    padding: 10px 16px;
   }
 
   .cb-topbar__title {
@@ -1508,263 +1292,103 @@ body {
     font-size: 11px;
   }
 
-  /* Cartes plein écran mais avec air */
   .cb-card {
     border-radius: 14px;
     padding: 12px;
   }
+}
 
-  /* Pas de scroll horizontal nulle part */
-  html,
-  body {
+
+/* -------------------------------------------------------
+   6.4 — AJUSTEMENTS RESPONSIVE SPÉCIFIQUES
+   Planning / Présence / Employés (pas de débordement)
+   ------------------------------------------------------- */
+
+/* ---- Planning mobile ---- */
+@media (max-width: 768px) {
+  .cb-planning__mobile-view,
+  .cb-planning__mobile-employees {
     max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  .cb-main,
-  .cb-content {
-    overflow-x: hidden;
-  }
-}
-/* === PRÉSENCE : header & résumé plus compact en mobile === */
-
-@media (max-width: 768px) {
-  .cb-presence__header {
-    margin-bottom: 12px;
-  }
-
-  .cb-presence__header-main {
-    gap: 4px;
-  }
-
-  .cb-presence__header-title {
-    font-size: 20px;
-    line-height: 1.1;
-  }
-
-  .cb-presence__header-subtitle {
-    font-size: 12px;
-  }
-
-  .cb-presence__summary-card {
-    padding: 10px 12px;
-    border-radius: 16px;
-  }
-
-  .cb-presence__summary-grid {
-    grid-template-columns: 1fr;
-    row-gap: 4px;
-  }
-
-  .cb-presence__summary-block {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-
-  .cb-presence__summary-label {
-    font-size: 11px;
-  }
-
-  .cb-presence__summary-value {
-    font-size: 14px;
-  }
-
-  .cb-presence__summary-note {
-    margin-top: 6px;
-    font-size: 11px;
-  }
-}
-/* === PRÉSENCE : liste des employés en mode cartes === */
-
-@media (max-width: 768px) {
-  .cb-presence__employees-card {
-    padding: 10px 12px;
-    border-radius: 18px;
-  }
-
-  .cb-presence__employees-header {
-    font-size: 12px;
-    padding-bottom: 6px;
-  }
-
-  .cb-presence__row {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) auto auto;
-    align-items: center;
-    column-gap: 8px;
-    row-gap: 4px;
-    padding-block: 6px;
-  }
-
-  .cb-presence__employee-info {
-    font-size: 13px;
-  }
-
-  .cb-presence__employee-role {
-    font-size: 11px;
-  }
-
-  .cb-presence__presence-dot {
-    margin-right: 0;
-  }
-
-  .cb-presence__time-badge {
-    min-width: 74px;
-  }
-}
-/* === PRÉSENCE : bloc CA individuel mode mobile propre === */
-
-@media (max-width: 768px) {
-  .cb-presence__ca-card {
-    padding: 10px 12px;
-    border-radius: 18px;
-  }
-
-  /* On limite la largeur utile et on évite tout débordement */
-  .cb-presence__ca-table-wrapper {
-    overflow-x: hidden;
-  }
-
-  .cb-presence__ca-table {
     width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
+    overflow-x: hidden;
   }
 
-  .cb-presence__ca-table thead {
-    display: none; /* on enlève la grosse ligne de titres en mobile */
+  .cb-planning__mobile-emp-row {
+    padding: 10px 12px;
+    border-radius: 14px;
   }
 
-  .cb-presence__ca-table tr {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 8px;
-    row-gap: 4px;
-    padding-block: 6px;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  /* cellules : on les transforme en petits blocs "label + valeur" */
-  .cb-presence__ca-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 12px;
-  }
-
-  .cb-presence__ca-label {
-    font-size: 11px;
-    color: #9ca3af;
-  }
-
-  .cb-presence__ca-hours,
-  .cb-presence__ca-input {
-    font-size: 13px;
-  }
-
-  /* On masque les colonnes secondaires pour alléger :
-     - par exemple la colonne "Note" ou "Règlement" si tu en as une */
-  .cb-presence__ca-cell--extra {
-    display: none;
+  .cb-planning__shift-pill {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
-/* ====== FEUILLE DE PRÉSENCE – TABLEAU RESPONSIVE ====== */
 
-/* Desktop par défaut */
-.cb-presence__table--main {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.cb-presence__table--main th,
-.cb-presence__table--main td {
-  padding: 8px 6px;
-  text-align: left;
-}
-
-.cb-presence__cell-label {
-  display: none; /* on n’affiche les labels qu’en mobile */
-}
-
-/* Mobile : chaque employé = petite "carte" verticale */
+/* ---- Présence mobile ---- */
 @media (max-width: 768px) {
   .cb-presence__table-wrapper {
-    width: 100%;
     overflow-x: hidden;
-  }
-
-  .cb-presence__table--main thead {
-    display: none;
-  }
-
-  .cb-presence__table--main tbody {
-    display: block;
-  }
-
-  .cb-presence__row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 0;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .cb-presence__cell {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 2px 0;
-    width: 100%;
-  }
-
-  .cb-presence__cell--employee {
-    align-items: flex-start;
-    margin-bottom: 4px;
-  }
-
-  .cb-presence__employee-cell {
-    gap: 6px;
-  }
-
-  .cb-presence__cell-label {
-    display: block;
-    font-size: 11px;
-    color: #9ca3af;
-    margin-right: 8px;
-    flex-shrink: 0;
-  }
-
-  .cb-presence__time-input {
-    max-width: 110px;
-  }
-
-  .cb-presence__hours-value {
-    font-size: 13px;
-  }
-
-  .cb-presence__ca-input {
-    max-width: 110px;
-  }
-
-  .cb-presence__note-input {
-    width: 100%;
-    font-size: 13px;
-  }
-
-  /* Option : on allège un peu en mobile en mettant la note sous la ligne */
-  .cb-presence__cell--note {
-    margin-top: 2px;
   }
 
   .cb-presence-main {
     padding: 10px 12px;
-    border-radius: 18px;
+    border-radius: 14px;
+  }
+
+  .cb-presence__row {
+    gap: 6px;
+  }
+
+  .cb-presence__ca-card,
+  .cb-presence__employees-card {
+    border-radius: 16px;
   }
 }
 
-/* ====== FICHES EMPLOYÉS ====== */
+/* ---- Employés mobile ---- */
+@media (max-width: 768px) {
+  .cb-employees__grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 14px;
+  }
+
+  .cb-employees__grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cb-employee-card {
+    display: none; /* affichée uniquement si active */
+  }
+
+  .cb-employee-card--active {
+    display: flex;
+    scroll-snap-align: center;
+    min-width: 85%;
+    max-width: 85%;
+  }
+}
+
+
+/* -------------------------------------------------------
+   6.5 — NAV MOBILE FLOTTANTE (compatibilité popups & modales)
+   ------------------------------------------------------- */
+
+.cb-bottom-nav,
+.cb-nav-floating,
+.cb-mobile-nav {
+  z-index: 20; /* sous les modales mais au-dessus du contenu */
+}
+
+.cb-modal,
+.cb-modal-backdrop {
+  z-index: 90; /* les modales passent AU-DESSUS */
+}
+/* ============================================================
+   7.1 — FICHES EMPLOYÉS : STRUCTURE GÉNÉRALE (DESKTOP)
+   ============================================================ */
 
 .cb-employees {
   display: flex;
@@ -1779,415 +1403,21 @@ body {
   gap: 12px;
 }
 
-.cb-employees__mobile-slider {
-  display: none; /* activé seulement en mobile */
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(148, 163, 184, 0.5);
-}
-
-.cb-employees__slider-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #4b5563;
-}
-
-.cb-employees__slider-btn {
-  padding-inline: 10px;
-  min-width: 0;
-}
-
-/* Grille desktop */
-
 .cb-employees__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
-/* Carte employé */
-
-.cb-employee-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-radius: 22px;
-  padding: 16px 16px 12px;
-  background: radial-gradient(circle at top left, #eef2ff 0, #ffffff 40%, #ffffff 100%);
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  transform: translateY(0) scale(1);
-  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-}
-
-.cb-employee-card--active {
-  transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
-  border-color: rgba(79, 70, 229, 0.5);
-}
-
-.cb-employee-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.cb-employee-card__name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.cb-employee-card__role {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.cb-employee-card__section {
-  border-radius: 14px;
-  padding: 8px 10px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cb-employee-card__name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.cb-employee-card__role {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.cb-employee-card__edit-btn {
-  min-width: 0;
-  padding-inline: 10px;
-}
-
-.cb-employee-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.cb-employee-card__info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-
-.cb-employee-card__line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #374151;
-}
-
-.cb-employee-card__icon {
-  width: 18px;
-  text-align: center;
-  opacity: 0.75;
-}
-
-/* Sections principales */
-
-.cb-employee-card__section {
-  border-radius: 12px;
-  padding: 8px 10px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cb-employee-card__section-header {
-  font-size: 12px;
-  font-weight: 500;
-  color: #4b5563;
-  margin-bottom: 2px;
-}
-
-.cb-employee-card__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.cb-employee-card__label {
-  color: #6b7280;
-}
-
-.cb-employee-card__value {
-  color: #111827;
-  font-weight: 500;
-}
-
-/* Indicateur heures contrat vs effectuées */
-
-.cb-employee-card__row--indicator {
-  align-items: center;
-}
-
-.cb-employee__indicator {
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.cb-employee__indicator--none {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.cb-employee__indicator--low {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.cb-employee__indicator--almost {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.cb-employee__indicator--ok {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.cb-employee__indicator--extra {
-  background: #bbf7d0;
-  color: #166534;
-}
-
-/* Footer & détails */
-
-.cb-employee-card__footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  justify-content: flex-start;
-  margin-top: 6px;
-}
-
-.cb-employee-card__footer--edit {
-  justify-content: flex-end;
-}
-
-.cb-employee-card__delete {
-  margin-left: auto;
-  font-size: 12px;
-  color: #b91c1c;
-}
-
-/* Détails "Voir plus" avec transition */
-
-.cb-employee-card__details {
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  transition: max-height 0.22s ease, opacity 0.22s ease;
-}
-
-.cb-employee-card__details--open {
-  max-height: 220px;
-  opacity: 1;
-}
-
-.cb-employee-card__details-section {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cb-employee-card__details-section h4 {
-  font-size: 12px;
-  font-weight: 600;
-  color: #4b5563;
-  margin-bottom: 2px;
-}
-
-.cb-employee-card__details-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.cb-employee-card__details-label {
-  color: #6b7280;
-}
-
-.cb-employee-card__details-value {
-  color: #111827;
-}
-
-/* Formulaire d’édition */
-
-.cb-employee-card__edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.cb-employee-card__edit-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 10px;
-}
-
-.cb-employee-card__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cb-employee-card__field label {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.cb-employee-card__field input,
-.cb-employee-card__field select {
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  padding: 6px 10px;
-  font-size: 13px;
-  background: #ffffff;
-}
-
-.cb-employee-card__field--full {
-  grid-column: 1 / -1;
-}
-
-/* Modal d'ajout employé */
-
-.cb-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 60;                    // au-dessus de tout, y compris la nav mobile
-  display: flex;
-  align-items: flex-start;        // popup accroché en haut
-  justify-content: center;
-  padding-top: max(env(safe-area-inset-top), 24px);
-}
-
-.cb-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.38);
-  backdrop-filter: blur(4px);
-}
-
-.cb-modal__content {
-  position: relative;
-  z-index: 61;
-  width: 100%;
-  max-width: 520px;
-  margin: 0 16px;
-  border-radius: 20px;
-  padding: 16px 18px 18px;
-  background: #ffffff;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
-
-  /* 🔥 le plus important : ne dépasse jamais l’écran */
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-}
-
-.cb-modal__title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 4px;
-}
-
-.cb-modal__subtitle {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 12px;
-}
-
-.cb-modal__form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.cb-modal__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 10px;
-}
-
-.cb-modal__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cb-modal__field label {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.cb-modal__field input,
-.cb-modal__field select {
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  padding: 6px 10px;
-  font-size: 13px;
-  background: #ffffff;
-}
-
-.cb-modal__field--full {
-  grid-column: 1 / -1;
-}
-
-.cb-modal__footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-/* Responsive */
-
+/* TABLET */
 @media (max-width: 1024px) {
   .cb-employees__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+/* MOBILE : une carte visible uniquement (slider) */
 @media (max-width: 768px) {
-  .cb-employees__header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .cb-employees__mobile-slider {
-    display: flex;
-  }
-
   .cb-employees__grid {
     grid-template-columns: 1fr;
   }
@@ -2200,12 +1430,228 @@ body {
     display: flex;
   }
 
-  .cb-employee-card {
-    padding: 12px 12px 10px;
+  .cb-employees__header {
+    flex-direction: column;
+    align-items: flex-start;
   }
+}
+/* ============================================================
+   7.2 — SLIDER MOBILE TYPE "FIFA CARDS"
+   ============================================================ */
 
-  .cb-employee-card__edit-grid,
-  .cb-modal__grid {
-    grid-template-columns: 1fr;
+.cb-employees__mobile-slider {
+  display: none; /* visible seulement en mobile */
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.cb-employees__slider-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+@media (max-width: 768px) {
+  .cb-employees__mobile-slider {
+    display: flex;
   }
+}
+/* ============================================================
+   7.3 — STYLE DES CARTES EMPLOYÉS
+   ============================================================ */
+
+.cb-employee-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 22px;
+  padding: 16px 16px 12px;
+  background: radial-gradient(circle at top left, #eef2ff 0%, #ffffff 45%, #ffffff 100%);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
+  transition: 0.25s ease;
+}
+
+/* Effet carte FIFA active */
+.cb-employee-card--active {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+  border-color: rgba(79, 70, 229, 0.45);
+}
+
+/* --- Header --- */
+.cb-employee-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cb-employee-card__name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cb-employee-card__role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* --- Sections (contrat / salaire) --- */
+.cb-employee-card__section {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cb-employee-card__section-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.cb-employee-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.cb-employee-card__label {
+  color: #6b7280;
+}
+
+.cb-employee-card__value {
+  color: #111827;
+  font-weight: 500;
+}
+
+/* --- Footer --- */
+.cb-employee-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cb-employee-card__delete {
+  margin-left: auto;
+  color: #b91c1c;
+  font-size: 12px;
+}
+/* ============================================================
+   7.4 — BADGES INDICATEURS D’HEURES
+   ============================================================ */
+
+.cb-employee__indicator {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Pas d'heures */
+.cb-employee__indicator--none {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* En dessous du contrat */
+.cb-employee__indicator--low {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Presque OK */
+.cb-employee__indicator--almost {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Respect du contrat */
+.cb-employee__indicator--ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Heures supplémentaires */
+.cb-employee__indicator--extra {
+  background: #bbf7d0;
+  color: #166534;
+}
+/* ============================================================
+   7.5 — SECTION "VOIR PLUS" AVEC ANIMATION
+   ============================================================ */
+
+.cb-employee-card__details {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.25s ease;
+}
+
+/* Quand ouvert */
+.cb-employee-card__details--open {
+  max-height: 260px;
+  opacity: 1;
+}
+
+.cb-employee-card__details-section {
+  padding-top: 10px;
+  margin-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-employee-card__details-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+/* ============================================================
+   7.6 — MODALE D'AJOUT EMPLOYÉ
+   ============================================================ */
+
+.cb-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: max(env(safe-area-inset-top), 26px);
+}
+
+.cb-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.cb-modal__content {
+  position: relative;
+  z-index: 71;
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+
+  /* Important : tient sur un mobile sans déborder */
+  max-height: calc(100vh - 50px);
+  overflow-y: auto;
 }
