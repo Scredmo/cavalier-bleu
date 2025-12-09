@@ -222,6 +222,12 @@ a {
   border-radius: 999px;
   background: #e5e7eb;
 }
+/* S'assurer que la nav mobile reste derrière les modales */
+.cb-bottom-nav,
+.cb-mobile-nav,
+.cb-nav-floating {
+  z-index: 20;
+}
 
 /* ===========================
    CARDS & BUTTONS
@@ -805,6 +811,49 @@ a {
 .cb-presence__checkbox input:checked + span {
   background: #22c55e;
   border-color: #16a34a;
+}
+@media (max-width: 768px) {
+  .cb-employees__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cb-employees__mobile-slider {
+    display: flex;
+  }
+
+  /* Grille → carrousel horizontal */
+  .cb-employees__grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 4px 2px 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cb-employee-card {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 82%;
+    min-width: 82%;
+    scroll-snap-align: center;
+    transform: translateY(0) scale(0.98);
+  }
+
+  .cb-employee-card--active {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.15);
+  }
+
+  .cb-employee-card {
+    padding: 12px 12px 10px;
+  }
+
+  .cb-employee-card__edit-grid,
+  .cb-modal__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ====== VERSION PDF / IMPRESSION ====== */
@@ -2005,10 +2054,11 @@ body {
 .cb-modal {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 60;                    // au-dessus de tout, y compris la nav mobile
   display: flex;
-  align-items: center;
+  align-items: flex-start;        // popup accroché en haut
   justify-content: center;
+  padding-top: max(env(safe-area-inset-top), 24px);
 }
 
 .cb-modal__backdrop {
@@ -2020,14 +2070,18 @@ body {
 
 .cb-modal__content {
   position: relative;
-  z-index: 41;
+  z-index: 61;
   width: 100%;
   max-width: 520px;
   margin: 0 16px;
   border-radius: 20px;
-  padding: 16px 18px 14px;
+  padding: 16px 18px 18px;
   background: #ffffff;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+
+  /* 🔥 le plus important : ne dépasse jamais l’écran */
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 .cb-modal__title {
