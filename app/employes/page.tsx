@@ -1,248 +1,331 @@
 "use client";
 
-import { useState } from "react";
-import { useEmployees } from "@/data/useEmployees"; // ton hook actuel
-import { calculateMonthlyHours } from "@/utils/calcHours"; // nouvelle fonction (faite juste après)
+import { useEffect, useState } from "react";
+
+/* ============================================================
+   TYPES
+============================================================ */
+
+type Role = "Patron" | "Responsable" | "Barman" | "Cuisine" | "Serveur";
+
+type Employee = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  hourlyRate: number;
+  monthlyContractHours: number;
+};
+
+const STORAGE_EMPLOYEES_KEY = "CB_EMPLOYEES";
+
+/* ============================================================
+   HELPERS
+============================================================ */
+
+function generateId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function calcIndicator(hours: number, contract: number) {
+  if (contract === 0) return { label: "—", className: "none" };
+  if (hours === 0) return { label: "0 h", className: "none" };
+  if (hours < contract * 0.6) return { label: `${hours} h`, className: "low" };
+  if (hours < contract) return { label: `${hours} h`, className: "almost" };
+  if (hours === contract) return { label: `${hours} h`, className: "ok" };
+  return { label: `+${hours - contract} h`, className: "extra" };
+}
+
+/* MOCK – en production tu récupéreras depuis presence */
+function getHoursForEmployeeMonthly(employeeId: string): number {
+  return Math.floor(Math.random() * 160);
+}
+
+/* ============================================================
+   PAGE EMPLOYÉS
+============================================================ */
 
 export default function EmployeesPage() {
-  const {
-    employees,
-    updateEmployee,
-    addEmployee,
-    deleteEmployee,
-  } = useEmployees();
-
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [expanded, setExpanded] = useState<number | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<Employee | null>(null);
 
-  /** -----------------------
-   * BADGE COULEUR HEURES
-   ------------------------ */
-  const getHoursStatus = (contractHours: number, realHours: number) => {
-    const diff = realHours - contractHours;
+  /* ------------------------------------------------------------
+     LOAD EMPLOYEES
+  ------------------------------------------------------------ */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(STORAGE_EMPLOYEES_KEY);
+      if (raw) {
+        setEmployees(JSON.parse(raw));
+      }
+    } catch (e) {
+      console.error("Erreur chargement employés", e);
+    }
+  }, []);
 
-    if (realHours === 0) return { label: "Aucune heure", type: "none" };
-    if (diff < -5) return { label: `${diff}h`, type: "low" };
-    if (diff >= -5 && diff < 0) return { label: `${diff}h`, type: "almost" };
-    if (diff === 0) return { label: "OK", type: "ok" };
-    if (diff > 0) return { label: `+${diff}h`, type: "extra" };
+  /* ------------------------------------------------------------
+     SAVE EMPLOYEES
+  ------------------------------------------------------------ */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_EMPLOYEES_KEY, JSON.stringify(employees));
+  }, [employees]);
 
-    return { label: diff, type: "none" };
-  };
+  /* ------------------------------------------------------------
+     ADD / EDIT
+  ------------------------------------------------------------ */
 
-  /** -----------------------
-   * CALCUL SALAIRE NET
-   ------------------------ */
-  const computeSalary = (hours: number, rate: number) => {
-    return (hours * rate).toFixed(2);
-  };
+  function openAdd() {
+    setEditing(null);
+    setShowModal(true);
+  }
 
-  const currentMonth = new Date().getMonth() + 1;
+  function openEdit(emp: Employee) {
+    setEditing(emp);
+    setShowModal(true);
+  }
+
+  function saveEmployee(e: any) {
+    e.preventDefault();
+    const form = new FormData(e.target);
+
+    const data: Employee = {
+      id: editing?.id ?? generateId(),
+      firstName: form.get("firstName")!.toString(),
+      lastName: form.get("lastName")!.toString(),
+      role: form.get("role")!.toString() as Role,
+      hourlyRate: Number(form.get("hourlyRate") || 0),
+      monthlyContractHours: Number(form.get("monthlyContractHours") || 0),
+    };
+
+    if (editing) {
+      setEmployees((prev) =>
+        prev.map((emp) => (emp.id === editing.id ? data : emp))
+      );
+    } else {
+      setEmployees((prev) => [...prev, data]);
+    }
+
+    setShowModal(false);
+    setEditing(null);
+  }
+
+  function deleteEmployee(id: string) {
+    if (!confirm("Supprimer cet employé ?")) return;
+    setEmployees((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  /* ============================================================
+     RENDER
+  ============================================================ */
+
+  const current = employees[activeIndex];
 
   return (
     <div className="cb-employees">
-      {/* ---- EN-TÊTE ---- */}
+      {/* HEADER */}
       <div className="cb-employees__header">
-        <h2 className="cb-topbar__title">Équipe & Employés</h2>
-
-        <button
-          className="cb-button cb-button--secondary"
-          onClick={() => setShowAddModal(true)}
-        >
-          + Ajouter un employé
+        <h2 className="cb-dashboard__title">Employés</h2>
+        <button className="cb-button cb-button--secondary" onClick={openAdd}>
+          Ajouter un employé
         </button>
       </div>
 
-      {/* ---- SLIDER MOBILE FIFA ---- */}
-      <div className="cb-employees__mobile-slider">
-        <button
-          className="cb-button cb-button--ghost"
-          onClick={() =>
-            setActiveIndex((i) => (i === 0 ? employees.length - 1 : i - 1))
-          }
-        >
-          ←
-        </button>
+      {/* === MOBILE SLIDER === */}
+      {employees.length > 0 && (
+        <div className="cb-employees__mobile-slider">
+          <button
+            className="cb-employees__slider-btn"
+            onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
+          >
+            ⬅
+          </button>
 
-        <span className="cb-employees__slider-label">
-          {activeIndex + 1} / {employees.length}
-        </span>
+          <span className="cb-employees__slider-label">
+            {current.firstName} {current.lastName}
+          </span>
 
-        <button
-          className="cb-button cb-button--ghost"
-          onClick={() =>
-            setActiveIndex((i) => (i === employees.length - 1 ? 0 : i + 1))
-          }
-        >
-          →
-        </button>
-      </div>
+          <button
+            className="cb-employees__slider-btn"
+            onClick={() =>
+              setActiveIndex((i) => Math.min(employees.length - 1, i + 1))
+            }
+          >
+            ➝
+          </button>
+        </div>
+      )}
 
-      {/* ---- GRID DES CARTES EMPLOYÉS ---- */}
+      {/* === GRID DESKTOP === */}
       <div className="cb-employees__grid">
         {employees.map((emp, i) => {
-          const monthlyHours = calculateMonthlyHours(emp.id, currentMonth); // hook utils
-          const badge = getHoursStatus(emp.contractHours ?? 0, monthlyHours);
-          const salary = computeSalary(monthlyHours, emp.hourlyRate ?? 0);
+          const hours = getHoursForEmployeeMonthly(emp.id);
+          const indicator = calcIndicator(hours, emp.monthlyContractHours);
 
           return (
             <div
               key={emp.id}
-              className={
-                "cb-employee-card " +
-                (i === activeIndex ? "cb-employee-card--active" : "")
-              }
+              className={`cb-employee-card ${
+                i === activeIndex ? "cb-employee-card--active" : ""
+              }`}
+              onClick={() => setActiveIndex(i)}
             >
-              {/* HEADER */}
               <div className="cb-employee-card__header">
                 <div>
-                  <div className="cb-employee-card__name">{emp.name}</div>
+                  <div className="cb-employee-card__name">
+                    {emp.firstName} {emp.lastName}
+                  </div>
                   <div className="cb-employee-card__role">{emp.role}</div>
                 </div>
 
                 <button
-                  className="cb-button cb-button--ghost cb-employee-card__edit-btn"
+                  className="cb-button cb-button--ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(emp);
+                  }}
                 >
                   Modifier
                 </button>
               </div>
 
-              {/* ---- SECTIONS PRINCIPALES ---- */}
-              <div className="cb-employee-card__body">
-                {/* CONTRAT */}
-                <div className="cb-employee-card__section">
-                  <div className="cb-employee-card__section-header">
-                    Contrat
-                  </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">Type :</span>
-                    <span className="cb-employee-card__value">
-                      {emp.contractType || "—"}
-                    </span>
-                  </div>
-
-                  <div className="cb-employee-card__row cb-employee-card__row--indicator">
-                    <span className="cb-employee-card__label">
-                      Heures prévues :
-                    </span>
-                    <span
-                      className={
-                        "cb-employee__indicator cb-employee__indicator--" +
-                        badge.type
-                      }
-                    >
-                      {badge.label}
-                    </span>
-                  </div>
+              {/* Données principales */}
+              <div className="cb-employee-card__section">
+                <div className="cb-employee-card__row">
+                  <span className="cb-employee-card__label">
+                    Taux horaire :
+                  </span>
+                  <span className="cb-employee-card__value">
+                    {emp.hourlyRate} €
+                  </span>
                 </div>
 
-                {/* SALAIRE */}
-                <div className="cb-employee-card__section">
-                  <div className="cb-employee-card__section-header">
-                    Salaire
-                  </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      Heures effectuées :
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {monthlyHours}h
-                    </span>
-                  </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">Taux horaire :</span>
-                    <span className="cb-employee-card__value">
-                      {emp.hourlyRate ?? 0} €
-                    </span>
-                  </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      Salaire du mois :
-                    </span>
-                    <span className="cb-employee-card__value">{salary} €</span>
-                  </div>
+                <div className="cb-employee-card__row">
+                  <span className="cb-employee-card__label">
+                    Contrat mensuel :
+                  </span>
+                  <span className="cb-employee-card__value">
+                    {emp.monthlyContractHours} h
+                  </span>
                 </div>
 
-                {/* FOOTER */}
-                <div className="cb-employee-card__footer">
-                  <button
-                    className="cb-button cb-button--ghost"
-                    onClick={() =>
-                      setExpanded((prev) => (prev === i ? null : i))
-                    }
+                {/* Indicateur */}
+                <div className="cb-employee-card__row cb-employee-card__row--indicator">
+                  <span className="cb-employee-card__label">Effectuées :</span>
+                  <span
+                    className={`cb-employee__indicator cb-employee__indicator--${indicator.className}`}
                   >
-                    {expanded === i ? "Voir moins" : "Voir plus"}
-                  </button>
-
-                  <button className="cb-button cb-button--secondary">
-                    Voir contrat PDF
-                  </button>
+                    {indicator.label}
+                  </span>
                 </div>
+              </div>
 
-                {/* ---- DETAILS ---- */}
-                <div
-                  className={
-                    "cb-employee-card__details " +
-                    (expanded === i ? "cb-employee-card__details--open" : "")
-                  }
+              <div className="cb-employee-card__footer">
+                <a className="cb-dashboard-card__link" href="#">
+                  Voir contrat PDF
+                </a>
+
+                <button
+                  className="cb-employee-card__delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteEmployee(emp.id);
+                  }}
                 >
-                  <div className="cb-employee-card__details-section">
-                    <h4>Données personnelles</h4>
-
-                    <div className="cb-employee-card__details-row">
-                      <span className="cb-employee-card__details-label">
-                        Téléphone :
-                      </span>
-                      <span className="cb-employee-card__details-value">
-                        {emp.phone || "—"}
-                      </span>
-                    </div>
-
-                    <div className="cb-employee-card__details-row">
-                      <span className="cb-employee-card__details-label">
-                        Email :
-                      </span>
-                      <span className="cb-employee-card__details-value">
-                        {emp.email || "—"}
-                      </span>
-                    </div>
-
-                    <div className="cb-employee-card__details-row">
-                      <span className="cb-employee-card__details-label">
-                        Adresse :
-                      </span>
-                      <span className="cb-employee-card__details-value">
-                        {emp.address || "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="cb-employee-card__details-section">
-                    <h4>Documents</h4>
-                    <div className="cb-employee-card__details-row">
-                      <button className="cb-button cb-button--secondary">
-                        Voir contrat PDF
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    className="cb-employee-card__delete"
-                    onClick={() => deleteEmployee(emp.id)}
-                  >
-                    Supprimer l’employé
-                  </button>
-                </div>
+                  Supprimer
+                </button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* ============================================================
+         MODALE AJOUT / EDITION
+      ============================================================ */}
+      {showModal && (
+        <div className="cb-modal">
+          <div className="cb-modal__backdrop" onClick={() => setShowModal(false)} />
+
+          <div className="cb-modal__content">
+            <h3 className="cb-modal__title">
+              {editing ? "Modifier l'employé" : "Nouvel employé"}
+            </h3>
+
+            <form className="cb-modal__form" onSubmit={saveEmployee}>
+              <div className="cb-modal__grid">
+
+                <div className="cb-modal__field">
+                  <label>Prénom</label>
+                  <input
+                    name="firstName"
+                    defaultValue={editing?.firstName || ""}
+                    required
+                  />
+                </div>
+
+                <div className="cb-modal__field">
+                  <label>Nom</label>
+                  <input
+                    name="lastName"
+                    defaultValue={editing?.lastName || ""}
+                    required
+                  />
+                </div>
+
+                <div className="cb-modal__field">
+                  <label>Rôle</label>
+                  <select name="role" defaultValue={editing?.role || "Serveur"}>
+                    <option>Patron</option>
+                    <option>Responsable</option>
+                    <option>Barman</option>
+                    <option>Cuisine</option>
+                    <option>Serveur</option>
+                  </select>
+                </div>
+
+                <div className="cb-modal__field">
+                  <label>Taux horaire (€)</label>
+                  <input
+                    name="hourlyRate"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={editing?.hourlyRate ?? 0}
+                  />
+                </div>
+
+                <div className="cb-modal__field">
+                  <label>Heures contrat / mois</label>
+                  <input
+                    name="monthlyContractHours"
+                    type="number"
+                    min="0"
+                    defaultValue={editing?.monthlyContractHours ?? 0}
+                  />
+                </div>
+              </div>
+
+              <div className="cb-modal__footer">
+                <button
+                  type="button"
+                  className="cb-button cb-button--ghost"
+                  onClick={() => setShowModal(false)}
+                >
+                  Annuler
+                </button>
+
+                <button type="submit" className="cb-button cb-button--secondary">
+                  Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
