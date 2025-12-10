@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 
 // =====================================================
@@ -312,7 +313,9 @@ const emptyForm: FormState = {
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [presence, setPresence] = useState<PresenceState>({});
+  const [isMobile, setIsMobile] = useState(false);
   const [mobileIndex, setMobileIndex] = useState(0);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   // modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -581,12 +584,14 @@ export default function EmployeesPage() {
         ? 0
         : (prev - 1 + employees.length) % employees.length
     );
+    setExpandedIds(new Set());
   };
 
   const handleNextMobile = () => {
     setMobileIndex((prev) =>
       employees.length === 0 ? 0 : (prev + 1) % employees.length
     );
+    setExpandedIds(new Set());
   };
 
   // Ajuste l'index quand la liste change (suppr / ajout)
@@ -599,6 +604,54 @@ export default function EmployeesPage() {
       prev >= employees.length ? employees.length - 1 : prev
     );
   }, [employees.length]);
+
+  // Responsive : savoir si on est en mobile pour l'effet carrousel
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Bloque le scroll derrière la modal
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = isModalOpen ? "hidden" : original;
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [isModalOpen]);
+
+  // Calcule la position/échelle d'une carte dans le carrousel mobile
+    const getMobileCardStyle = (index: number) => {
+    const isActive = index === mobileIndex;
+
+    if (!isActive) {
+      return {
+        opacity: 0,
+        pointerEvents: "none",
+      } as React.CSSProperties;
+    }
+
+    return {
+      transform: "translateY(0) scale(1)",
+      transition:
+        "transform 0.22s ease, opacity 0.22s ease, box-shadow 0.22s ease",
+      opacity: 1,
+      zIndex: 10,
+    } as React.CSSProperties;
+  };
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   /* -----------------------------
      8. Rendu
@@ -624,7 +677,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* Slider mobile (carrousel) */}
-      {employees.length > 0 && (
+       {isMobile && employees.length > 0 && (
         <div className="cb-employees__mobile-slider">
           <button
             type="button"
@@ -665,6 +718,7 @@ export default function EmployeesPage() {
           const salaryGross = monthlyHours * (emp.hourlyRateGross || 0);
 
           const isActive = index === mobileIndex;
+          const isExpanded = expandedIds.has(emp.id);
 
           return (
             <article
@@ -673,6 +727,7 @@ export default function EmployeesPage() {
                 "cb-card cb-employee-card" +
                 (isActive ? " cb-employee-card--active" : "")
               }
+              style={isMobile ? getMobileCardStyle(index) : undefined}
             >
               {/* En-tête carte */}
               <header className="cb-employee-card__header">
@@ -692,66 +747,36 @@ export default function EmployeesPage() {
               </header>
 
               <div className="cb-employee-card__body">
-                {/* Bloc contrat / heures */}
+                {/* Bloc contrat / heures (résumé) */}
                 <section className="cb-employee-card__section">
                   <div className="cb-employee-card__section-header">
                     Contrat & heures
                   </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      Taux horaire brut
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.hourlyRateGross > 0
-                        ? `${emp.hourlyRateGross.toFixed(2)} €`
-                        : "—"}
-                    </span>
-                  </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      Taux horaire net
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.hourlyRateNet > 0
-                        ? `${emp.hourlyRateNet.toFixed(2)} €`
-                        : "—"}
-                    </span>
-                  </div>
-
                   <div className="cb-employee-card__row cb-employee-card__row--indicator">
                     <span className="cb-employee-card__label">{label}</span>
                     <span className={pillClass}>{pillText}</span>
                   </div>
-
                   <div className="cb-employee-card__row">
                     <span className="cb-employee-card__label">
-                      Salaire brut estimé
+                      Taux brut / net
                     </span>
                     <span className="cb-employee-card__value">
-                      {salaryGross > 0
-                        ? `${salaryGross.toFixed(2)} €`
+                      {emp.hourlyRateGross > 0
+                        ? `${emp.hourlyRateGross.toFixed(2)}€`
+                        : "—"}{" "}
+                      ·{" "}
+                      {emp.hourlyRateNet > 0
+                        ? `${emp.hourlyRateNet.toFixed(2)}€`
                         : "—"}
-                    </span>
-                  </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      Salaire net estimé
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {salaryNet > 0 ? `${salaryNet.toFixed(2)} €` : "—"}
                     </span>
                   </div>
                 </section>
 
-                {/* Bloc contact */}
+                {/* Bloc contact (visible) */}
                 <section className="cb-employee-card__section">
                   <div className="cb-employee-card__section-header">
                     Coordonnées
                   </div>
-
                   <div className="cb-employee-card__row">
                     <span className="cb-employee-card__label">
                       <span className="cb-employee-card__icon">📞</span>
@@ -761,7 +786,6 @@ export default function EmployeesPage() {
                       {emp.phone || "—"}
                     </span>
                   </div>
-
                   <div className="cb-employee-card__row">
                     <span className="cb-employee-card__label">
                       <span className="cb-employee-card__icon">✉️</span>
@@ -771,82 +795,109 @@ export default function EmployeesPage() {
                       {emp.email || "—"}
                     </span>
                   </div>
-
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      <span className="cb-employee-card__icon">📍</span>
-                      Adresse
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.address || "—"}
-                    </span>
-                  </div>
                 </section>
 
-                {/* Bloc admin / paie */}
-                <section className="cb-employee-card__section">
-                  <div className="cb-employee-card__section-header">
-                    Infos administratives
-                  </div>
+                {/* Détails étendus */}
+                {isExpanded && (
+                  <>
+                    <section className="cb-employee-card__section">
+                      <div className="cb-employee-card__section-header">
+                        Salaire estimé
+                      </div>
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          Salaire brut estimé
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {salaryGross > 0
+                            ? `${salaryGross.toFixed(2)} €`
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          Salaire net estimé
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {salaryNet > 0 ? `${salaryNet.toFixed(2)} €` : "—"}
+                        </span>
+                      </div>
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          Adresse
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {emp.address || "—"}
+                        </span>
+                      </div>
+                    </section>
 
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      <span className="cb-employee-card__icon">🧑‍💼</span>
-                      N° Sécurité sociale
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.socialSecurityNumber || "—"}
-                    </span>
-                  </div>
+                    <section className="cb-employee-card__section">
+                      <div className="cb-employee-card__section-header">
+                        Infos administratives
+                      </div>
 
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      <span className="cb-employee-card__icon">🏦</span>
-                      Banque
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.bankName || "—"}
-                    </span>
-                  </div>
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          <span className="cb-employee-card__icon">🧑‍💼</span>
+                          N° Sécurité sociale
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {emp.socialSecurityNumber || "—"}
+                        </span>
+                      </div>
 
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      <span className="cb-employee-card__icon">🧾</span>
-                      RIB / IBAN
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.rib || emp.iban || "—"}
-                    </span>
-                  </div>
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          <span className="cb-employee-card__icon">🏦</span>
+                          Banque
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {emp.bankName || "—"}
+                        </span>
+                      </div>
 
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      <span className="cb-employee-card__icon">📄</span>
-                      Type de contrat
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.contractType || "—"}
-                    </span>
-                  </div>
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          <span className="cb-employee-card__icon">🧾</span>
+                          RIB / IBAN
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {emp.rib || emp.iban || "—"}
+                        </span>
+                      </div>
 
-                  <div className="cb-employee-card__row">
-                    <span className="cb-employee-card__label">
-                      <span className="cb-employee-card__icon">📅</span>
-                      Date d&apos;embauche
-                    </span>
-                    <span className="cb-employee-card__value">
-                      {emp.hireDate || "—"}
-                    </span>
-                  </div>
-                </section>
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          <span className="cb-employee-card__icon">📄</span>
+                          Type de contrat
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {emp.contractType || "—"}
+                        </span>
+                      </div>
+
+                      <div className="cb-employee-card__row">
+                        <span className="cb-employee-card__label">
+                          <span className="cb-employee-card__icon">📅</span>
+                          Date d&apos;embauche
+                        </span>
+                        <span className="cb-employee-card__value">
+                          {emp.hireDate || "—"}
+                        </span>
+                      </div>
+                    </section>
+                  </>
+                )}
               </div>
 
               <footer className="cb-employee-card__footer">
                 <button
                   type="button"
                   className="cb-button cb-button--ghost"
+                  onClick={() => toggleExpanded(emp.id)}
                 >
-                  Voir contrat PDF
+                  {isExpanded ? "Voir moins" : "Voir plus"}
                 </button>
                 <button
                   type="button"
