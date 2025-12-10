@@ -642,13 +642,19 @@ const handleNextMobile = () => {
 }, [mobileIndex, isMobile, employees.length]);
 
   const toggleExpanded = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  setExpandedIds((prev) => {
+    const next = new Set<string>();
+
+    // si la carte est déjà ouverte -> on ferme tout
+    if (prev.has(id)) {
+      return next; // aucun ouvert
+    }
+
+    // sinon on ouvre seulement celle-ci
+    next.add(id);
+    return next;
+  });
+};
 
   /* -----------------------------
      8. Rendu
@@ -725,14 +731,15 @@ const handleNextMobile = () => {
   key={emp.id}
   className={
     "cb-card cb-employee-card" +
-    (isActive ? " cb-employee-card--active" : "")
+    (isActive ? " cb-employee-card--active" : "")+
+    (isExpanded ? " cb-employee-card--expanded" : "")
   }
 >
               {/* En-tête carte */}
               <header className="cb-employee-card__header">
                 <div>
                   <div className="cb-employee-card__name">
-                    {fullName(emp)}
+                    {emp.firstName}
                   </div>
                   <div className="cb-employee-card__role">{emp.role}</div>
                 </div>
@@ -796,98 +803,96 @@ const handleNextMobile = () => {
                   </div>
                 </section>
 
-                {/* Détails étendus */}
-                {isExpanded && (
-                  <>
-                    <section className="cb-employee-card__section">
-                      <div className="cb-employee-card__section-header">
-                        Salaire estimé
-                      </div>
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          Salaire brut estimé
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {salaryGross > 0
-                            ? `${salaryGross.toFixed(2)} €`
-                            : "—"}
-                        </span>
-                      </div>
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          Salaire net estimé
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {salaryNet > 0 ? `${salaryNet.toFixed(2)} €` : "—"}
-                        </span>
-                      </div>
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          Adresse
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {emp.address || "—"}
-                        </span>
-                      </div>
-                    </section>
+                                {/* Détails étendus (animés) */}
+                <div className="cb-employee-card__details">
+                  <section className="cb-employee-card__section">
+                    <div className="cb-employee-card__section-header">
+                      Salaire estimé
+                    </div>
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        Salaire brut estimé
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {salaryGross > 0
+                          ? `${salaryGross.toFixed(2)} €`
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        Salaire net estimé
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {salaryNet > 0 ? `${salaryNet.toFixed(2)} €` : "—"}
+                      </span>
+                    </div>
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        Adresse
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {emp.address || "—"}
+                      </span>
+                    </div>
+                  </section>
 
-                    <section className="cb-employee-card__section">
-                      <div className="cb-employee-card__section-header">
-                        Infos administratives
-                      </div>
+                  <section className="cb-employee-card__section">
+                    <div className="cb-employee-card__section-header">
+                      Infos administratives
+                    </div>
 
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          <span className="cb-employee-card__icon">🧑‍💼</span>
-                          N° Sécurité sociale
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {emp.socialSecurityNumber || "—"}
-                        </span>
-                      </div>
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        <span className="cb-employee-card__icon">🧑‍💼</span>
+                        N° Sécurité sociale
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {emp.socialSecurityNumber || "—"}
+                      </span>
+                    </div>
 
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          <span className="cb-employee-card__icon">🏦</span>
-                          Banque
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {emp.bankName || "—"}
-                        </span>
-                      </div>
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        <span className="cb-employee-card__icon">🏦</span>
+                        Banque
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {emp.bankName || "—"}
+                      </span>
+                    </div>
 
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          <span className="cb-employee-card__icon">🧾</span>
-                          RIB / IBAN
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {emp.rib || emp.iban || "—"}
-                        </span>
-                      </div>
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        <span className="cb-employee-card__icon">🧾</span>
+                        RIB / IBAN
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {emp.rib || emp.iban || "—"}
+                      </span>
+                    </div>
 
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          <span className="cb-employee-card__icon">📄</span>
-                          Type de contrat
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {emp.contractType || "—"}
-                        </span>
-                      </div>
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        <span className="cb-employee-card__icon">📄</span>
+                        Type de contrat
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {emp.contractType || "—"}
+                      </span>
+                    </div>
 
-                      <div className="cb-employee-card__row">
-                        <span className="cb-employee-card__label">
-                          <span className="cb-employee-card__icon">📅</span>
-                          Date d&apos;embauche
-                        </span>
-                        <span className="cb-employee-card__value">
-                          {emp.hireDate || "—"}
-                        </span>
-                      </div>
-                    </section>
-                  </>
-                )}
+                    <div className="cb-employee-card__row">
+                      <span className="cb-employee-card__label">
+                        <span className="cb-employee-card__icon">📅</span>
+                        Date d&apos;embauche
+                      </span>
+                      <span className="cb-employee-card__value">
+                        {emp.hireDate || "—"}
+                      </span>
+                    </div>
+                  </section>
+                </div>
               </div>
 
               <footer className="cb-employee-card__footer">

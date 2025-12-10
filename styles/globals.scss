@@ -1672,54 +1672,38 @@ body {
     z-index: 10;
   }
 
-  /* Carrousel mobile : défilement horizontal type librairie JS */
+  /* Carrousel mobile : défilement horizontal */
   .cb-employees__grid {
     position: relative;
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    gap: 30px;
-
+    gap: 50px;
     max-width: 100%;
-    padding: 50px;
-    border-radius: 26px;
-
-    background: radial-gradient(circle at 0% 0%, #e5edff 0%, #f9fafb 45%, #f3f4f6 100%);
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
-
+    padding: 40px;
     overflow-x: auto;
+    overflow-y: visible;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Chaque carte se comporte comme un slide */
   .cb-employees__grid .cb-employee-card {
-    flex: 0 0 78%;
-    max-width: 78%;
+    flex: 0 0 86%;
+    max-width: 86%;
     margin-inline: auto;
     scroll-snap-align: center;
     scroll-snap-stop: always;
-
-    border-radius: 18px;
-    padding: 14px 14px 12px;
-    transform-origin: center;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(148, 163, 184, 0.3);
-
-    /* cartes “au repos” = plus petites & plus fades */
-    transform: scale(0.9);
-    opacity: 0.45;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    transform: scale(0.95);
+    opacity: 0.7;
     transition: transform 0.22s ease, opacity 0.22s ease,
       box-shadow 0.22s ease, border-color 0.22s ease;
   }
 
   .cb-employees__grid .cb-employee-card--active {
-    transform: translateY(-10px) scale(1.06);
+    transform: translateY(-6px) scale(1.02);
     opacity: 1;
     border-color: rgba(79, 70, 229, 0.8);
-    box-shadow: 0 30px 80px rgba(79, 70, 229, 0.35);
+    box-shadow: 0 24px 60px rgba(79, 70, 229, 0.28);
   }
 }
 /* =======================================================
@@ -1753,6 +1737,36 @@ body {
   font-size: 12px;
   opacity: 0.8;
 }
+/* Animation ouverture/fermeture des détails employés */
+.cb-employee-card__details {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  transition:
+    max-height 0.25s ease,
+    opacity 0.18s ease,
+    transform 0.25s ease;
+}
+
+/* Quand la carte est en mode "voir plus" */
+.cb-employee-card--expanded .cb-employee-card__details {
+  max-height: 600px; // ajuste si besoin selon la hauteur
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* petit effet sur la carte elle-même quand ouverte */
+.cb-employee-card {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.cb-employee-card--expanded {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.35);
+}
 
 /* ----- Carte active (mobile slider) ----- */
 .cb-employee-card--active {
@@ -1772,6 +1786,10 @@ body {
   font-size: 18px;
   font-weight: 700;
   color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px; // ajuste si tu veux un peu plus large
 }
 
 .cb-employee-card__role {
@@ -1826,6 +1844,7 @@ body {
   justify-content: space-between;
   align-items: baseline;
   font-size: 13px;
+  flex-direction: column;
 }
 
 .cb-employee-card__label {
@@ -1898,9 +1917,7 @@ body {
 /* ----- FOOTER carte ----- */
 .cb-employee-card__footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
+  
 }
 
 .cb-employee-card__delete {

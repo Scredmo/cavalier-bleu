@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // update-scss-carousel.js
-// À placer à la racine de ton projet, puis lancer `node update-scss-carousel.js`
+// À placer à la racine du projet, puis lancer `node update-scss-carousel.js`
+// Version CommonJS pour éviter les erreurs d'import.
 
-import { readFileSync, writeFileSync } from "fs";
-import { resolve } from "path";
+const { readFileSync, writeFileSync } = require("fs");
+const { resolve } = require("path");
 
 const scssPath = resolve("styles/globals.scss");
+const marker = "/* === Carrousel mobile & styles cartes employés === */";
 const newStyles = `
 
 /* === Carrousel mobile & styles cartes employés === */
@@ -124,13 +127,15 @@ const newStyles = `
 
 try {
   let content = readFileSync(scssPath, "utf-8");
-  if (!content.includes(".cb-employees__grid")) {
-    content += "\n" + newStyles;
-    writeFileSync(scssPath, content, "utf-8");
-    console.log("✅ SCSS mis à jour avec les styles carrousel.");
-  } else {
+
+  if (content.includes(marker)) {
     console.log("ℹ️ Styles carrousel déjà présents — pas de changement.");
+    process.exit(0);
   }
+
+  content += "\n" + newStyles;
+  writeFileSync(scssPath, content, "utf-8");
+  console.log("✅ SCSS mis à jour avec les styles carrousel.");
 } catch (err) {
   console.error("❌ Erreur lors de la mise à jour du SCSS :", err);
 }
