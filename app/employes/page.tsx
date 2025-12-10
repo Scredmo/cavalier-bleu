@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // =====================================================
 // 🔹 TYPES + CONSTANTES (Employés)
@@ -311,6 +311,7 @@ const emptyForm: FormState = {
 //    State -> chargement LS -> dérivés -> rendu
 // =====================================================
 export default function EmployeesPage() {
+  const sliderRef = useRef<HTMLDivElement | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [presence, setPresence] = useState<PresenceState>({});
   const [isMobile, setIsMobile] = useState(false);
@@ -578,22 +579,21 @@ export default function EmployeesPage() {
      7. Navigation mobile (slider)
   ----------------------------- */
 
-  const handlePrevMobile = () => {
-    setMobileIndex((prev) =>
-      employees.length === 0
-        ? 0
-        : (prev - 1 + employees.length) % employees.length
-    );
-    setExpandedIds(new Set());
-  };
+const handlePrevMobile = () => {
+  setMobileIndex((prev) =>
+    employees.length === 0
+      ? 0
+      : (prev - 1 + employees.length) % employees.length
+  );
+  setExpandedIds(new Set());
+};
 
-  const handleNextMobile = () => {
-    setMobileIndex((prev) =>
-      employees.length === 0 ? 0 : (prev + 1) % employees.length
-    );
-    setExpandedIds(new Set());
-  };
-
+const handleNextMobile = () => {
+  setMobileIndex((prev) =>
+    employees.length === 0 ? 0 : (prev + 1) % employees.length
+  );
+  setExpandedIds(new Set());
+};
   // Ajuste l'index quand la liste change (suppr / ajout)
   useEffect(() => {
     if (employees.length === 0) {
@@ -624,25 +624,22 @@ export default function EmployeesPage() {
     };
   }, [isModalOpen]);
 
-  // Calcule la position/échelle d'une carte dans le carrousel mobile
-    const getMobileCardStyle = (index: number) => {
-    const isActive = index === mobileIndex;
+  useEffect(() => {
+  if (!isMobile) return;
+  if (!sliderRef.current) return;
 
-    if (!isActive) {
-      return {
-        opacity: 0,
-        pointerEvents: "none",
-      } as React.CSSProperties;
-    }
+  const cards =
+    sliderRef.current.querySelectorAll<HTMLElement>(".cb-employee-card");
+  const activeCard = cards[mobileIndex];
 
-    return {
-      transform: "translateY(0) scale(1)",
-      transition:
-        "transform 0.22s ease, opacity 0.22s ease, box-shadow 0.22s ease",
-      opacity: 1,
-      zIndex: 10,
-    } as React.CSSProperties;
-  };
+  if (activeCard) {
+    activeCard.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }
+}, [mobileIndex, isMobile, employees.length]);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
@@ -677,7 +674,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* Slider mobile (carrousel) */}
-       {isMobile && employees.length > 0 && (
+      {employees.length > 0 && (
         <div className="cb-employees__mobile-slider">
           <button
             type="button"
@@ -709,7 +706,10 @@ export default function EmployeesPage() {
       )}
 
       {/* Cartes */}
-      <div className="cb-employees__grid">
+      <div
+        className="cb-employees__grid"
+        ref={sliderRef}
+      >
         {employees.map((emp, index) => {
           const { label, pillText, pillClass, monthlyHours } =
             getIndicator(emp);
@@ -722,13 +722,12 @@ export default function EmployeesPage() {
 
           return (
             <article
-              key={emp.id}
-              className={
-                "cb-card cb-employee-card" +
-                (isActive ? " cb-employee-card--active" : "")
-              }
-              style={isMobile ? getMobileCardStyle(index) : undefined}
-            >
+  key={emp.id}
+  className={
+    "cb-card cb-employee-card" +
+    (isActive ? " cb-employee-card--active" : "")
+  }
+>
               {/* En-tête carte */}
               <header className="cb-employee-card__header">
                 <div>
