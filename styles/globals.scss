@@ -1584,7 +1584,7 @@ body {
   margin: 4px auto 0;
 
   /* Fond “panneau” plus pro derrière les cartes */
-  background: radial-gradient(circle at 0% 0%, #e5edff 0%, #f9fafb 45%, #f3f4f6 100%);
+  background: radial-gradient(circle at 0 0, #4f46e5 0%, #52a9ff 45%, #fff 100%);
   border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
 }
@@ -1676,9 +1676,6 @@ body {
   .cb-employees__grid {
     position: relative;
     display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 50px;
     max-width: 100%;
     padding: 40px;
     overflow-x: auto;
