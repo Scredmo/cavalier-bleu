@@ -312,6 +312,10 @@ const emptyForm: FormState = {
 // =====================================================
 export default function EmployeesPage() {
   const sliderRef = useRef<HTMLDivElement | null>(null);
+  const isProgrammaticScrollRef = useRef(false);
+  const lastScrollLeftRef = useRef(0);
+  const scrollDirRef = useRef<1 | -1>(1);
+  const scrollEndTimerRef = useRef<number | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [presence, setPresence] = useState<PresenceState>({});
   const [isMobile, setIsMobile] = useState(false);
@@ -625,21 +629,26 @@ const handleNextMobile = () => {
   }, [isModalOpen]);
 
   useEffect(() => {
-  if (!isMobile) return;
-  if (!sliderRef.current) return;
+    if (!isMobile) return;
+    if (!sliderRef.current) return;
 
-  const cards =
-    sliderRef.current.querySelectorAll<HTMLElement>(".cb-employee-card");
-  const activeCard = cards[mobileIndex];
+    const cards = sliderRef.current.querySelectorAll<HTMLElement>(
+      ".cb-employee-card"
+    );
+    const activeCard = cards[mobileIndex];
 
-  if (activeCard) {
-    activeCard.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-  }
-}, [mobileIndex, isMobile, employees.length]);
+    if (activeCard) {
+      isProgrammaticScrollRef.current = true;
+      activeCard.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+      window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 260);
+    }
+  }, [mobileIndex, isMobile, employees.length]);
 
   const toggleExpanded = (id: string) => {
   setExpandedIds((prev) => {
@@ -655,6 +664,92 @@ const handleNextMobile = () => {
     return next;
   });
 };
+
+  const getClosestCardIndexToCenter = () => {
+    const container = sliderRef.current;
+    if (!container) return 0;
+
+    const cards = Array.from(
+      container.querySelectorAll<HTMLElement>(".cb-employee-card")
+    );
+    if (cards.length === 0) return 0;
+
+    const containerRect = container.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+
+    let bestIndex = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+
+    cards.forEach((card, idx) => {
+      const r = card.getBoundingClientRect();
+      const cardCenter = r.left + r.width / 2;
+      const dist = Math.abs(cardCenter - centerX);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIndex = idx;
+      }
+    });
+
+    return bestIndex;
+  };
+
+  const jumpToIndex = (idx: number) => {
+    const container = sliderRef.current;
+    if (!container) return;
+
+    const cards = container.querySelectorAll<HTMLElement>(".cb-employee-card");
+    const target = cards[idx];
+    if (!target) return;
+
+    isProgrammaticScrollRef.current = true;
+    target.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+    window.setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 80);
+  };
+
+  const handleMobileScroll = () => {
+    if (!isMobile) return;
+    const container = sliderRef.current;
+    if (!container) return;
+    if (isProgrammaticScrollRef.current) return;
+
+    // direction
+    const currentLeft = container.scrollLeft;
+    if (currentLeft > lastScrollLeftRef.current) scrollDirRef.current = 1;
+    else if (currentLeft < lastScrollLeftRef.current) scrollDirRef.current = -1;
+    lastScrollLeftRef.current = currentLeft;
+
+    // debounce: on "scroll end" -> set active + loop
+    if (scrollEndTimerRef.current) {
+      window.clearTimeout(scrollEndTimerRef.current);
+    }
+
+    scrollEndTimerRef.current = window.setTimeout(() => {
+      const nextIndex = getClosestCardIndexToCenter();
+      setMobileIndex(nextIndex);
+
+      // loop effect: if user swipes past ends, wrap
+      const maxLeft = container.scrollWidth - container.clientWidth;
+      const nearStart = container.scrollLeft <= 6;
+      const nearEnd = container.scrollLeft >= maxLeft - 6;
+
+      if (employees.length > 1) {
+        if (nearEnd && scrollDirRef.current === 1 && nextIndex === employees.length - 1) {
+          // wrap to first
+          setMobileIndex(0);
+          jumpToIndex(0);
+          setExpandedIds(new Set());
+        } else if (nearStart && scrollDirRef.current === -1 && nextIndex === 0) {
+          // wrap to last
+          const last = employees.length - 1;
+          setMobileIndex(last);
+          jumpToIndex(last);
+          setExpandedIds(new Set());
+        }
+      }
+    }, 120);
+  };
 
   /* -----------------------------
      8. Rendu
@@ -715,6 +810,7 @@ const handleNextMobile = () => {
       <div
         className="cb-employees__grid"
         ref={sliderRef}
+        onScroll={handleMobileScroll}
       >
         {employees.map((emp, index) => {
           const { label, pillText, pillClass, monthlyHours } =
@@ -728,13 +824,28 @@ const handleNextMobile = () => {
 
           return (
             <article
-  key={emp.id}
-  className={
-    "cb-card cb-employee-card" +
-    (isActive ? " cb-employee-card--active" : "")+
-    (isExpanded ? " cb-employee-card--expanded" : "")
-  }
->
+              key={emp.id}
+              className={
+                "cb-card cb-employee-card" +
+                (isActive ? " cb-employee-card--active" : "") +
+                (isExpanded ? " cb-employee-card--expanded" : "")
+              }
+              data-active={isActive ? "true" : "false"}
+              role={isMobile ? "button" : undefined}
+              tabIndex={isMobile ? 0 : undefined}
+              aria-current={isActive ? "true" : undefined}
+              onClick={() => {
+                if (!isMobile) return;
+                setMobileIndex(index);
+              }}
+              onKeyDown={(e) => {
+                if (!isMobile) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setMobileIndex(index);
+                }
+              }}
+            >
               {/* En-tête carte */}
               <header className="cb-employee-card__header">
                 <div>
