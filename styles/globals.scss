@@ -1545,14 +1545,15 @@ body {
 }
 
 /* Titre / sous-titre de page */
-.cb-dashboard__title {
+/* Scope title/subtitle to Employees page to avoid global conflicts */
+.cb-employees .cb-dashboard__title {
   font-size: 20px;
   font-weight: 700;
   margin: 0;
   color: #0f172a;
 }
 
-.cb-dashboard__subtitle {
+.cb-employees .cb-dashboard__subtitle {
   font-size: 13px;
   color: #6b7280;
   margin: 2px 0 0;
@@ -1667,11 +1668,13 @@ body {
   .cb-employees__grid {
     position: relative;
     display: flex;
+    width: 100%;
+    max-width: 100%;
     padding: 30px;
     overflow-x: auto;
     overflow-y: visible;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 18px; /* doit matcher le padding horizontal ci-dessous */
+    scroll-padding-inline: 30px; /* match padding for proper centering */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
@@ -1680,6 +1683,7 @@ body {
   .cb-employees__grid .cb-employee-card {
     flex: 0 0 86%;
     max-width: 86%;
+    margin-inline: auto;
 
     position: relative;
     z-index: 1;
