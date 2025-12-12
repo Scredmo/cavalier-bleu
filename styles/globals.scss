@@ -1660,6 +1660,15 @@ body {
 }
 
 @media (max-width: 768px) {
+  .cb-employees__grid .cb-employee-card {
+    position: relative;
+    z-index: 1;
+  }
+
+  .cb-employees__grid .cb-employee-card--active {
+    z-index: 10;
+  }
+
   .cb-employees__header {
     flex-direction: column;
     align-items: flex-start;

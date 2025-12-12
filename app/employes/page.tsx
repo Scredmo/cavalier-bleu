@@ -746,7 +746,10 @@ const handleNextMobile = () => {
                 <button
                   type="button"
                   className="cb-button cb-button--ghost cb-employee-card__edit-btn"
-                  onClick={() => openEditModal(emp)}
+                  onClick={(e) => {
+    e.stopPropagation();
+    openEditModal(emp);
+  }}
                 >
                   Modifier
                 </button>
@@ -899,14 +902,20 @@ const handleNextMobile = () => {
                 <button
                   type="button"
                   className="cb-button cb-button--ghost"
-                  onClick={() => toggleExpanded(emp.id)}
+                  onClick={(e) => {
+    e.stopPropagation();
+    toggleExpanded(emp.id);
+  }}
                 >
                   {isExpanded ? "Voir moins" : "Voir plus"}
                 </button>
                 <button
                   type="button"
                   className="cb-employee-card__delete"
-                  onClick={() => handleDelete(emp.id)}
+                  onClick={(e) => {
+    e.stopPropagation();
+    handleDelete(emp.id);
+  }}
                 >
                   Supprimer
                 </button>
