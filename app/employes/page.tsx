@@ -808,9 +808,20 @@ const handleNextMobile = () => {
 
       {/* Cartes */}
       <div
-        className="cb-employees__grid"
+        className={
+          "cb-employees__grid" + (isMobile ? " cb-employees__grid--mobile" : "")
+        }
         ref={sliderRef}
         onScroll={handleMobileScroll}
+        // ✅ Override inline for Vercel/debug: guarantees full width + no padding on mobile
+        style={
+          isMobile
+            ? {
+                maxWidth: "100%",
+                padding : "40px",
+              }
+            : undefined
+        }
       >
         {employees.map((emp, index) => {
           const { label, pillText, pillClass, monthlyHours } =
@@ -834,6 +845,20 @@ const handleNextMobile = () => {
               role={isMobile ? "button" : undefined}
               tabIndex={isMobile ? 0 : undefined}
               aria-current={isActive ? "true" : undefined}
+              style={
+                isMobile
+                  ? {
+                      position: "relative",
+                      zIndex: isActive ? 10 : 1,
+                      transform: isActive
+                        ? "translateY(-10px) scale(1.02)"
+                        : "scale(0.965)",
+                      opacity: isActive ? 1 : 0.82,
+                      transition:
+                        "transform 220ms ease, opacity 220ms ease, box-shadow 220ms ease",
+                    }
+                  : undefined
+              }
               onClick={() => {
                 if (!isMobile) return;
                 setMobileIndex(index);
