@@ -2,10 +2,14 @@
   "name": "cavalier-bleu",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
-    "dev": "next dev -H 0.0.0.0",
+    "dev": "next dev",
+    "prebuild": "node update-scss-carousel.js",
     "build": "next build",
-    "start": "next start -H 0.0.0.0",
+    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
