@@ -1667,31 +1667,13 @@ body {
   .cb-employees__grid {
     position: relative;
     display: flex;
-    gap: 16px;
-
-    width: 100%;
-    max-width: 100%;
-
-    /* IMPORTANT : pas de gros padding qui “casse” la carte */
-    padding: 0;
-    margin: 0;
-
+    padding: 30px;
     overflow-x: auto;
     overflow-y: visible;
     scroll-snap-type: x mandatory;
     scroll-padding-inline: 18px; /* doit matcher le padding horizontal ci-dessous */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-
-    /* fond mobile plus clean (évite les délimitations) */
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-
-    /* un peu d’air à gauche/droite pour centrer le snap */
-    padding-inline: 18px;
-    padding-bottom: 22px;
   }
 
   /* cartes */
@@ -1731,6 +1713,19 @@ body {
   }
   .cb-employees__grid::-webkit-scrollbar-track {
     background: transparent;
+  }
+  .cb-employee-card--clone {
+  pointer-events: none;
+  opacity: 0.6;
+}
+}
+@media (max-width: 768px) {
+  .cb-employee-card--placeholder {
+    flex: 0 0 86%;
+    max-width: 86%;
+    scroll-snap-align: center;
+    opacity: 0;
+    pointer-events: none;
   }
 }
 /* =======================================================

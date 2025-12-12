@@ -316,6 +316,8 @@ export default function EmployeesPage() {
   const shouldCenterOnIndexRef = useRef(false);
   const lastScrollLeftRef = useRef(0);
   const scrollDirRef = useRef<1 | -1>(1);
+  const lockActiveUntilRef = useRef(0);
+  const [disableCardAnim, setDisableCardAnim] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [presence, setPresence] = useState<PresenceState>({});
   const [isMobile, setIsMobile] = useState(false);
@@ -712,37 +714,53 @@ const handleNextMobile = () => {
     const root = sliderRef.current;
     if (!root) return;
 
-    const cards = Array.from(
-      root.querySelectorAll<HTMLElement>(".cb-employee-card")
-    );
-    if (cards.length === 0) return;
+    let raf = 0;
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (isProgrammaticScrollRef.current) return;
+    const computeActive = () => {
+      if (isProgrammaticScrollRef.current) return;
+      if (Date.now() < lockActiveUntilRef.current) return;
 
-        let best: IntersectionObserverEntry | null = null;
-        for (const e of entries) {
-          if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
-        }
-        if (!best?.isIntersecting) return;
+      const cards = Array.from(
+        root.querySelectorAll<HTMLElement>(".cb-employee-card")
+      );
+      if (cards.length === 0) return;
 
-        const el = best.target as HTMLElement;
+      const viewportCenter = root.scrollLeft + root.clientWidth / 2;
+
+      let bestIdx = 0;
+      let bestDist = Number.POSITIVE_INFINITY;
+
+      for (let i = 0; i < cards.length; i++) {
+        const el = cards[i];
         const idx = Number(el.dataset.index);
-        if (!Number.isNaN(idx)) {
-          setMobileIndex(idx);
-        }
-      },
-      {
-        root,
-        threshold: [0.25, 0.4, 0.55, 0.7, 0.85],
-        // fenêtre centrale pour favoriser la carte au milieu
-        rootMargin: "0px -35% 0px -35%",
-      }
-    );
+        if (Number.isNaN(idx)) continue;
 
-    cards.forEach((c) => io.observe(c));
-    return () => io.disconnect();
+        const elCenter = el.offsetLeft + el.clientWidth / 2;
+        const dist = Math.abs(elCenter - viewportCenter);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = idx;
+        }
+      }
+
+      setMobileIndex((prev) => (prev === bestIdx ? prev : bestIdx));
+    };
+
+    const onScroll = () => {
+      if (isProgrammaticScrollRef.current) return;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(computeActive);
+    };
+
+    root.addEventListener("scroll", onScroll, { passive: true });
+
+    // init
+    computeActive();
+
+    return () => {
+      root.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [isMobile, mobileCards.length]);
 
 
@@ -759,11 +777,19 @@ const handleNextMobile = () => {
       const target = cards[idx];
       if (!target) return;
 
+      // Pendant le jump invisible, on verrouille l'"active" et on coupe les transitions
+      lockActiveUntilRef.current = Date.now() + 220;
+      setDisableCardAnim(true);
+
       isProgrammaticScrollRef.current = true;
-      // jump instantané, puis on relâche le flag
       target.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+
+      // relâche le flag + réactive les anims après 2 frames
       window.setTimeout(() => {
         isProgrammaticScrollRef.current = false;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setDisableCardAnim(false));
+        });
       }, 60);
     };
 
@@ -778,14 +804,14 @@ const handleNextMobile = () => {
         // Si on est sur un clone, on saute vers la vraie carte correspondante
         if (mobileIndex === 0) {
           // clone du dernier -> vraie dernière (index employees.length)
-          jumpTo(employees.length);
           setMobileIndex(employees.length);
+          jumpTo(employees.length);
           return;
         }
         if (mobileIndex === employees.length + 1) {
           // clone du premier -> vraie première (index 1)
-          jumpTo(1);
           setMobileIndex(1);
+          jumpTo(1);
         }
       }, 120);
     };
@@ -818,7 +844,6 @@ const handleNextMobile = () => {
       }, 60);
     }, 0);
   }, [hasLoop, employees.length]);
-
   /* -----------------------------
      8. Rendu
   ----------------------------- */
@@ -884,13 +909,13 @@ const handleNextMobile = () => {
           isMobile
             ? {
                 maxWidth: "100%",
-                padding: "0px",
               }
             : undefined
         }
       >
         {(hasLoop ? mobileCards : employees).map((emp, index) => {
-          const realEmp = hasLoop ? employees[toRealIndex(index)] ?? emp : emp;
+
+  const realEmp = hasLoop ? employees[toRealIndex(index)] ?? emp : emp;
           const { label, pillText, pillClass, monthlyHours } =
             getIndicator(realEmp);
 
@@ -898,11 +923,11 @@ const handleNextMobile = () => {
           const salaryGross = monthlyHours * (realEmp.hourlyRateGross || 0);
 
           const isActive = isMobile ? index === mobileIndex : index === mobileIndex;
-          const isExpanded = expandedIds.has(emp.id);
+          const isExpanded = expandedIds.has(realEmp.id);
 
           return (
             <article
-              key={emp.id}
+              key={`${emp.id}-${index}`}
               className={
                 "cb-card cb-employee-card" +
                 (isActive ? " cb-employee-card--active" : "") +
@@ -922,8 +947,9 @@ const handleNextMobile = () => {
                         ? "translateY(-10px) scale(1.02)"
                         : "scale(0.965)",
                       opacity: isActive ? 1 : 0.82,
-                      transition:
-                        "transform 220ms ease, opacity 220ms ease, box-shadow 220ms ease",
+                      transition: disableCardAnim
+                        ? "none"
+                        : "transform 220ms ease, opacity 220ms ease, box-shadow 220ms ease",
                     }
                   : undefined
               }
@@ -963,7 +989,7 @@ const handleNextMobile = () => {
               <header className="cb-employee-card__header">
                 <div>
                   <div className="cb-employee-card__name">
-                    {emp.firstName}
+                    {realEmp.firstName}
                   </div>
                   <div className="cb-employee-card__role">{realEmp.role}</div>
                 </div>
@@ -972,7 +998,7 @@ const handleNextMobile = () => {
                   className="cb-button cb-button--ghost cb-employee-card__edit-btn"
                   onClick={(e) => {
     e.stopPropagation();
-    openEditModal(emp);
+    openEditModal(realEmp);
   }}
                 >
                   Modifier
@@ -1128,7 +1154,7 @@ const handleNextMobile = () => {
                   className="cb-button cb-button--ghost"
                   onClick={(e) => {
     e.stopPropagation();
-    toggleExpanded(emp.id);
+    toggleExpanded(realEmp.id);
   }}
                 >
                   {isExpanded ? "Voir moins" : "Voir plus"}
@@ -1138,7 +1164,7 @@ const handleNextMobile = () => {
                   className="cb-employee-card__delete"
                   onClick={(e) => {
     e.stopPropagation();
-    handleDelete(emp.id);
+    handleDelete(realEmp.id);
   }}
                 >
                   Supprimer
