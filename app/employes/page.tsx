@@ -728,27 +728,13 @@ const handleNextMobile = () => {
 
           return (
             <article
-              key={emp.id}
-              className={
-                "cb-card cb-employee-card" +
-                (isActive ? " cb-employee-card--active" : "") +
-                (isExpanded ? " cb-employee-card--expanded" : "")
-              }
-              role={isMobile ? "button" : undefined}
-              tabIndex={isMobile ? 0 : undefined}
-              aria-current={isActive ? "true" : undefined}
-              onClick={() => {
-                if (!isMobile) return;
-                setMobileIndex(index);
-              }}
-              onKeyDown={(e) => {
-                if (!isMobile) return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setMobileIndex(index);
-                }
-              }}
-            >
+  key={emp.id}
+  className={
+    "cb-card cb-employee-card" +
+    (isActive ? " cb-employee-card--active" : "")+
+    (isExpanded ? " cb-employee-card--expanded" : "")
+  }
+>
               {/* En-tête carte */}
               <header className="cb-employee-card__header">
                 <div>
