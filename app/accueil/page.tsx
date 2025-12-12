@@ -6,10 +6,10 @@ import React, { useEffect, useState } from 'react';
 // 🔹 TYPES + CONSTANTES (Accueil du jour)
 // =====================================================
 const navPages = [
-  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Dashboard', href: '/accueil' },
   { label: 'Planning', href: '/planning' },
   { label: 'Employés', href: '/employes' },
-  { label: 'Présences', href: '/presences' },
+  { label: 'Présence', href: '/presence' },
   { label: 'Réservations', href: '/reservations' },
   { label: 'Dépenses', href: '/depenses' },
   { label: 'Demandes', href: '/demandes' },

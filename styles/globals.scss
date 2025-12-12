@@ -1532,6 +1532,8 @@ body {
    7.C Modal d’ajout / édition employé
 ========================================== */
 
+/* === Carrousel mobile & styles cartes employés === */
+
 /* ------------------------------------------
    7.A — LAYOUT GLOBAL + HEADER + SLIDER
 ------------------------------------------- */
@@ -1677,6 +1679,7 @@ body {
   /* Carrousel mobile : défilement horizontal */
   .cb-employees__grid {
     position: relative;
+    
     display: flex;
     max-width: 100%;
     padding: 40px;
@@ -1684,7 +1687,10 @@ body {
     overflow-y: visible;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+  gap: 16px;
+  scroll-padding-inline: 40px; /* doit matcher ton padding horizontal */
   }
+ 
 
   .cb-employees__grid .cb-employee-card {
     flex: 0 0 86%;
@@ -2016,3 +2022,5 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
