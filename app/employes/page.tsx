@@ -313,13 +313,13 @@ const emptyForm: FormState = {
 export default function EmployeesPage() {
   const sliderRef = useRef<HTMLDivElement | null>(null);
   const isProgrammaticScrollRef = useRef(false);
+  const shouldCenterOnIndexRef = useRef(false);
   const lastScrollLeftRef = useRef(0);
   const scrollDirRef = useRef<1 | -1>(1);
-  const scrollEndTimerRef = useRef<number | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [presence, setPresence] = useState<PresenceState>({});
   const [isMobile, setIsMobile] = useState(false);
-  const [mobileIndex, setMobileIndex] = useState(0);
+  const [mobileIndex, setMobileIndex] = useState(0); // index "carrousel" (sur mobile: liste étendue avec clones)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   // modal
@@ -579,23 +579,50 @@ export default function EmployeesPage() {
     });
   };
 
+  // ===== Mobile loop "parfait" (clones) =====
+  const hasLoop = isMobile && employees.length > 1;
+  const mobileCards: Employee[] = useMemo(() => {
+    if (!hasLoop) return employees;
+    const first = employees[0];
+    const last = employees[employees.length - 1];
+    return [last, ...employees, first];
+  }, [employees, hasLoop]);
+
+  const toRealIndex = (idx: number) => {
+    if (!hasLoop) return Math.max(0, Math.min(idx, employees.length - 1));
+    if (idx === 0) return employees.length - 1;
+    if (idx === employees.length + 1) return 0;
+    return idx - 1;
+  };
+
+  const toLoopIndex = (realIdx: number) => (hasLoop ? realIdx + 1 : realIdx);
+
   /* -----------------------------
      7. Navigation mobile (slider)
   ----------------------------- */
 
 const handlePrevMobile = () => {
-  setMobileIndex((prev) =>
-    employees.length === 0
-      ? 0
-      : (prev - 1 + employees.length) % employees.length
-  );
+  shouldCenterOnIndexRef.current = true;
+  setMobileIndex((prev) => {
+    if (!hasLoop) {
+      return employees.length === 0 ? 0 : (prev - 1 + employees.length) % employees.length;
+    }
+    // carrousel étendu: on peut aller sur le clone (index 0)
+    return prev <= 0 ? employees.length : prev - 1;
+  });
   setExpandedIds(new Set());
 };
 
 const handleNextMobile = () => {
-  setMobileIndex((prev) =>
-    employees.length === 0 ? 0 : (prev + 1) % employees.length
-  );
+  shouldCenterOnIndexRef.current = true;
+  setMobileIndex((prev) => {
+    if (!hasLoop) {
+      return employees.length === 0 ? 0 : (prev + 1) % employees.length;
+    }
+    // carrousel étendu: on peut aller sur le clone (index employees.length + 1)
+    const maxIdx = employees.length + 1;
+    return prev >= maxIdx ? 1 : prev + 1;
+  });
   setExpandedIds(new Set());
 };
   // Ajuste l'index quand la liste change (suppr / ajout)
@@ -604,10 +631,20 @@ const handleNextMobile = () => {
       setMobileIndex(0);
       return;
     }
-    setMobileIndex((prev) =>
-      prev >= employees.length ? employees.length - 1 : prev
-    );
-  }, [employees.length]);
+
+    if (!hasLoop) {
+      setMobileIndex((prev) => (prev >= employees.length ? employees.length - 1 : prev));
+      return;
+    }
+
+    // Sur mobile avec clones: index par défaut = 1 (première vraie carte)
+    setMobileIndex((prev) => {
+      const maxIdx = employees.length + 1;
+      if (prev < 0) return 1;
+      if (prev > maxIdx) return 1;
+      return prev === 0 || prev === maxIdx ? prev : prev;
+    });
+  }, [employees.length, hasLoop]);
 
   // Responsive : savoir si on est en mobile pour l'effet carrousel
   useEffect(() => {
@@ -631,6 +668,7 @@ const handleNextMobile = () => {
   useEffect(() => {
     if (!isMobile) return;
     if (!sliderRef.current) return;
+    if (!shouldCenterOnIndexRef.current) return;
 
     const cards = sliderRef.current.querySelectorAll<HTMLElement>(
       ".cb-employee-card"
@@ -646,9 +684,11 @@ const handleNextMobile = () => {
       });
       window.setTimeout(() => {
         isProgrammaticScrollRef.current = false;
-      }, 260);
+      }, 340);
     }
-  }, [mobileIndex, isMobile, employees.length]);
+
+    shouldCenterOnIndexRef.current = false;
+  }, [mobileIndex, isMobile, mobileCards.length]);
 
   const toggleExpanded = (id: string) => {
   setExpandedIds((prev) => {
@@ -665,91 +705,119 @@ const handleNextMobile = () => {
   });
 };
 
-  const getClosestCardIndexToCenter = () => {
-    const container = sliderRef.current;
-    if (!container) return 0;
+
+  // ✅ Mobile: la carte active suit le swipe (carte la plus centrée)
+  useEffect(() => {
+    if (!isMobile) return;
+    const root = sliderRef.current;
+    if (!root) return;
 
     const cards = Array.from(
-      container.querySelectorAll<HTMLElement>(".cb-employee-card")
+      root.querySelectorAll<HTMLElement>(".cb-employee-card")
     );
-    if (cards.length === 0) return 0;
+    if (cards.length === 0) return;
 
-    const containerRect = container.getBoundingClientRect();
-    const centerX = containerRect.left + containerRect.width / 2;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (isProgrammaticScrollRef.current) return;
 
-    let bestIndex = 0;
-    let bestDist = Number.POSITIVE_INFINITY;
-
-    cards.forEach((card, idx) => {
-      const r = card.getBoundingClientRect();
-      const cardCenter = r.left + r.width / 2;
-      const dist = Math.abs(cardCenter - centerX);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestIndex = idx;
-      }
-    });
-
-    return bestIndex;
-  };
-
-  const jumpToIndex = (idx: number) => {
-    const container = sliderRef.current;
-    if (!container) return;
-
-    const cards = container.querySelectorAll<HTMLElement>(".cb-employee-card");
-    const target = cards[idx];
-    if (!target) return;
-
-    isProgrammaticScrollRef.current = true;
-    target.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
-    window.setTimeout(() => {
-      isProgrammaticScrollRef.current = false;
-    }, 80);
-  };
-
-  const handleMobileScroll = () => {
-    if (!isMobile) return;
-    const container = sliderRef.current;
-    if (!container) return;
-    if (isProgrammaticScrollRef.current) return;
-
-    // direction
-    const currentLeft = container.scrollLeft;
-    if (currentLeft > lastScrollLeftRef.current) scrollDirRef.current = 1;
-    else if (currentLeft < lastScrollLeftRef.current) scrollDirRef.current = -1;
-    lastScrollLeftRef.current = currentLeft;
-
-    // debounce: on "scroll end" -> set active + loop
-    if (scrollEndTimerRef.current) {
-      window.clearTimeout(scrollEndTimerRef.current);
-    }
-
-    scrollEndTimerRef.current = window.setTimeout(() => {
-      const nextIndex = getClosestCardIndexToCenter();
-      setMobileIndex(nextIndex);
-
-      // loop effect: if user swipes past ends, wrap
-      const maxLeft = container.scrollWidth - container.clientWidth;
-      const nearStart = container.scrollLeft <= 6;
-      const nearEnd = container.scrollLeft >= maxLeft - 6;
-
-      if (employees.length > 1) {
-        if (nearEnd && scrollDirRef.current === 1 && nextIndex === employees.length - 1) {
-          // wrap to first
-          setMobileIndex(0);
-          jumpToIndex(0);
-          setExpandedIds(new Set());
-        } else if (nearStart && scrollDirRef.current === -1 && nextIndex === 0) {
-          // wrap to last
-          const last = employees.length - 1;
-          setMobileIndex(last);
-          jumpToIndex(last);
-          setExpandedIds(new Set());
+        let best: IntersectionObserverEntry | null = null;
+        for (const e of entries) {
+          if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
         }
+        if (!best?.isIntersecting) return;
+
+        const el = best.target as HTMLElement;
+        const idx = Number(el.dataset.index);
+        if (!Number.isNaN(idx)) {
+          setMobileIndex(idx);
+        }
+      },
+      {
+        root,
+        threshold: [0.25, 0.4, 0.55, 0.7, 0.85],
+        // fenêtre centrale pour favoriser la carte au milieu
+        rootMargin: "0px -35% 0px -35%",
       }
-    }, 120);
-  };
+    );
+
+    cards.forEach((c) => io.observe(c));
+    return () => io.disconnect();
+  }, [isMobile, mobileCards.length]);
+
+
+  // ✅ Mobile: loop parfait via clones (jump invisible après inertie)
+  useEffect(() => {
+    if (!hasLoop) return;
+    const root = sliderRef.current;
+    if (!root) return;
+
+    let t: number | null = null;
+
+    const jumpTo = (idx: number) => {
+      const cards = root.querySelectorAll<HTMLElement>(".cb-employee-card");
+      const target = cards[idx];
+      if (!target) return;
+
+      isProgrammaticScrollRef.current = true;
+      // jump instantané, puis on relâche le flag
+      target.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+      window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 60);
+    };
+
+    const onScroll = () => {
+      if (isProgrammaticScrollRef.current) return;
+      if (t) window.clearTimeout(t);
+
+      // attendre la fin de l'inertie
+      t = window.setTimeout(() => {
+        if (isProgrammaticScrollRef.current) return;
+
+        // Si on est sur un clone, on saute vers la vraie carte correspondante
+        if (mobileIndex === 0) {
+          // clone du dernier -> vraie dernière (index employees.length)
+          jumpTo(employees.length);
+          setMobileIndex(employees.length);
+          return;
+        }
+        if (mobileIndex === employees.length + 1) {
+          // clone du premier -> vraie première (index 1)
+          jumpTo(1);
+          setMobileIndex(1);
+        }
+      }, 120);
+    };
+
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      root.removeEventListener("scroll", onScroll);
+      if (t) window.clearTimeout(t);
+    };
+  }, [hasLoop, mobileIndex, employees.length]);
+
+  // ✅ Au passage en mobile loop: on se place sur la première vraie carte
+  useEffect(() => {
+    if (!hasLoop) return;
+    if (!sliderRef.current) return;
+    if (employees.length === 0) return;
+
+    // si on arrive en mobile, on force la première vraie carte
+    setMobileIndex(1);
+    window.setTimeout(() => {
+      const root = sliderRef.current;
+      if (!root) return;
+      const cards = root.querySelectorAll<HTMLElement>(".cb-employee-card");
+      const firstReal = cards[1];
+      if (!firstReal) return;
+      isProgrammaticScrollRef.current = true;
+      firstReal.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+      window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 60);
+    }, 0);
+  }, [hasLoop, employees.length]);
 
   /* -----------------------------
      8. Rendu
@@ -785,8 +853,8 @@ const handleNextMobile = () => {
             ←
           </button>
           <span className="cb-employees__slider-label">
-            Fiche {employees[mobileIndex]?.firstName || ""} (
-            {mobileIndex + 1}/{employees.length})
+            Fiche {employees[toRealIndex(mobileIndex)]?.firstName || ""} (
+            {employees.length ? toRealIndex(mobileIndex) + 1 : 0}/{employees.length})
           </span>
           <button
             type="button"
@@ -799,7 +867,7 @@ const handleNextMobile = () => {
             <div
               className="cb-employees__slider-progress-bar"
               style={{
-                width: `${employees.length ? ((mobileIndex + 1) / employees.length) * 100 : 0}%`,
+                width: `${employees.length ? ((toRealIndex(mobileIndex) + 1) / employees.length) * 100 : 0}%`,
               }}
             />
           </div>
@@ -812,25 +880,24 @@ const handleNextMobile = () => {
           "cb-employees__grid" + (isMobile ? " cb-employees__grid--mobile" : "")
         }
         ref={sliderRef}
-        onScroll={handleMobileScroll}
-        // ✅ Override inline for Vercel/debug: guarantees full width + no padding on mobile
         style={
           isMobile
             ? {
                 maxWidth: "100%",
-                padding : "40px",
+                padding: "0px",
               }
             : undefined
         }
       >
-        {employees.map((emp, index) => {
+        {(hasLoop ? mobileCards : employees).map((emp, index) => {
+          const realEmp = hasLoop ? employees[toRealIndex(index)] ?? emp : emp;
           const { label, pillText, pillClass, monthlyHours } =
-            getIndicator(emp);
+            getIndicator(realEmp);
 
-          const salaryNet = monthlyHours * (emp.hourlyRateNet || 0);
-          const salaryGross = monthlyHours * (emp.hourlyRateGross || 0);
+          const salaryNet = monthlyHours * (realEmp.hourlyRateNet || 0);
+          const salaryGross = monthlyHours * (realEmp.hourlyRateGross || 0);
 
-          const isActive = index === mobileIndex;
+          const isActive = isMobile ? index === mobileIndex : index === mobileIndex;
           const isExpanded = expandedIds.has(emp.id);
 
           return (
@@ -842,6 +909,7 @@ const handleNextMobile = () => {
                 (isExpanded ? " cb-employee-card--expanded" : "")
               }
               data-active={isActive ? "true" : "false"}
+              data-index={index}
               role={isMobile ? "button" : undefined}
               tabIndex={isMobile ? 0 : undefined}
               aria-current={isActive ? "true" : undefined}
@@ -861,12 +929,32 @@ const handleNextMobile = () => {
               }
               onClick={() => {
                 if (!isMobile) return;
+                if (!hasLoop) {
+                  shouldCenterOnIndexRef.current = true;
+                  setMobileIndex(index);
+                  return;
+                }
+
+                // en mode clone: ignorer le clic sur les clones (0 et last)
+                if (index === 0) {
+                  shouldCenterOnIndexRef.current = true;
+                  setMobileIndex(employees.length);
+                  return;
+                }
+                if (index === employees.length + 1) {
+                  shouldCenterOnIndexRef.current = true;
+                  setMobileIndex(1);
+                  return;
+                }
+
+                shouldCenterOnIndexRef.current = true;
                 setMobileIndex(index);
               }}
               onKeyDown={(e) => {
                 if (!isMobile) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
+                  shouldCenterOnIndexRef.current = true;
                   setMobileIndex(index);
                 }
               }}
@@ -877,7 +965,7 @@ const handleNextMobile = () => {
                   <div className="cb-employee-card__name">
                     {emp.firstName}
                   </div>
-                  <div className="cb-employee-card__role">{emp.role}</div>
+                  <div className="cb-employee-card__role">{realEmp.role}</div>
                 </div>
                 <button
                   type="button"
@@ -906,12 +994,12 @@ const handleNextMobile = () => {
                       Taux brut / net
                     </span>
                     <span className="cb-employee-card__value">
-                      {emp.hourlyRateGross > 0
-                        ? `${emp.hourlyRateGross.toFixed(2)}€`
+                      {realEmp.hourlyRateGross > 0
+                        ? `${realEmp.hourlyRateGross.toFixed(2)}€`
                         : "—"}{" "}
                       ·{" "}
-                      {emp.hourlyRateNet > 0
-                        ? `${emp.hourlyRateNet.toFixed(2)}€`
+                      {realEmp.hourlyRateNet > 0
+                        ? `${realEmp.hourlyRateNet.toFixed(2)}€`
                         : "—"}
                     </span>
                   </div>
@@ -928,7 +1016,7 @@ const handleNextMobile = () => {
                       Téléphone
                     </span>
                     <span className="cb-employee-card__value">
-                      {emp.phone || "—"}
+                      {realEmp.phone || "—"}
                     </span>
                   </div>
                   <div className="cb-employee-card__row">
@@ -937,7 +1025,7 @@ const handleNextMobile = () => {
                       Email
                     </span>
                     <span className="cb-employee-card__value">
-                      {emp.email || "—"}
+                      {realEmp.email || "—"}
                     </span>
                   </div>
                 </section>
@@ -971,7 +1059,7 @@ const handleNextMobile = () => {
                         Adresse
                       </span>
                       <span className="cb-employee-card__value">
-                        {emp.address || "—"}
+                        {realEmp.address || "—"}
                       </span>
                     </div>
                   </section>
@@ -987,7 +1075,7 @@ const handleNextMobile = () => {
                         N° Sécurité sociale
                       </span>
                       <span className="cb-employee-card__value">
-                        {emp.socialSecurityNumber || "—"}
+                        {realEmp.socialSecurityNumber || "—"}
                       </span>
                     </div>
 
@@ -997,7 +1085,7 @@ const handleNextMobile = () => {
                         Banque
                       </span>
                       <span className="cb-employee-card__value">
-                        {emp.bankName || "—"}
+                        {realEmp.bankName || "—"}
                       </span>
                     </div>
 
@@ -1007,7 +1095,7 @@ const handleNextMobile = () => {
                         RIB / IBAN
                       </span>
                       <span className="cb-employee-card__value">
-                        {emp.rib || emp.iban || "—"}
+                        {realEmp.rib || realEmp.iban || "—"}
                       </span>
                     </div>
 
@@ -1017,7 +1105,7 @@ const handleNextMobile = () => {
                         Type de contrat
                       </span>
                       <span className="cb-employee-card__value">
-                        {emp.contractType || "—"}
+                        {realEmp.contractType || "—"}
                       </span>
                     </div>
 
@@ -1027,7 +1115,7 @@ const handleNextMobile = () => {
                         Date d&apos;embauche
                       </span>
                       <span className="cb-employee-card__value">
-                        {emp.hireDate || "—"}
+                        {realEmp.hireDate || "—"}
                       </span>
                     </div>
                   </section>

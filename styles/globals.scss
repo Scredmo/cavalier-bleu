@@ -1651,15 +1651,6 @@ body {
 }
 
 @media (max-width: 768px) {
-  .cb-employees__grid .cb-employee-card {
-    position: relative;
-    z-index: 1;
-  }
-
-  .cb-employees__grid .cb-employee-card--active {
-    z-index: 10;
-  }
-
   .cb-employees__header {
     flex-direction: column;
     align-items: flex-start;
@@ -1675,36 +1666,71 @@ body {
   /* Carrousel mobile : défilement horizontal */
   .cb-employees__grid {
     position: relative;
-    
     display: flex;
+    gap: 16px;
+
+    width: 100%;
     max-width: 100%;
-    padding: 40px;
+
+    /* IMPORTANT : pas de gros padding qui “casse” la carte */
+    padding: 0;
+    margin: 0;
+
     overflow-x: auto;
     overflow-y: visible;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: 18px; /* doit matcher le padding horizontal ci-dessous */
     -webkit-overflow-scrolling: touch;
-  gap: 16px;
-  scroll-padding-inline: 40px; /* doit matcher ton padding horizontal */
+    overscroll-behavior-x: contain;
+
+    /* fond mobile plus clean (évite les délimitations) */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+
+    /* un peu d’air à gauche/droite pour centrer le snap */
+    padding-inline: 18px;
+    padding-bottom: 22px;
   }
 
-
+  /* cartes */
   .cb-employees__grid .cb-employee-card {
     flex: 0 0 86%;
     max-width: 86%;
-    margin-inline: auto;
+
+    position: relative;
+    z-index: 1;
+
     scroll-snap-align: center;
     scroll-snap-stop: always;
-    transform: scale(0.95);
-    opacity: 0.7;
+
+    transform: scale(0.965);
+    opacity: 0.82;
+
     transition: transform 0.22s ease, opacity 0.22s ease,
       box-shadow 0.22s ease, border-color 0.22s ease;
   }
 
+  /* carte active au premier plan */
   .cb-employees__grid .cb-employee-card--active {
-    transform: translateY(-6px) scale(1.02);
+    z-index: 10;
+    transform: translateY(-8px) scale(1.02);
     opacity: 1;
     border-color: rgba(79, 70, 229, 0.8);
-    box-shadow: 0 24px 60px rgba(79, 70, 229, 0.28);
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.20);
+  }
+
+  /* optionnel : barre de scroll discrète */
+  .cb-employees__grid::-webkit-scrollbar {
+    height: 6px;
+  }
+  .cb-employees__grid::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    border-radius: 999px;
+  }
+  .cb-employees__grid::-webkit-scrollbar-track {
+    background: transparent;
   }
 }
 /* =======================================================
