@@ -37,9 +37,6 @@ const newStyles = `
     flex-direction: row;
     align-items: stretch;
     gap: 16px;
-    max-width: 640px;
-    margin: 0 auto 90px;
-    padding: 12px 4px 8px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
