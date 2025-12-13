@@ -158,7 +158,7 @@ a {
 .cb-content {
   padding: 14px 20px 70px;
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 /* -------------------------------------------------------
@@ -1573,7 +1573,7 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   border-radius: 26px;
-  margin: 4px auto 0;
+  padding: 30px;
 
   /* Fond “panneau” plus pro derrière les cartes */
   background: radial-gradient(circle at 0 0, #4f46e5 0%, #52a9ff 45%, #fff 100%);
@@ -1666,17 +1666,23 @@ body {
 
   /* Carrousel mobile : défilement horizontal */
   .cb-employees__grid {
-    position: relative;
-    display: flex;
-    max-width: 100%;
-    padding: 30px;
-    overflow-x: auto;
-    overflow-y: visible;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: 30px; /* match padding for proper centering */
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-  }
+  position: relative;
+  display: flex;
+  max-width: 100%;
+
+  /* ✅ air léger, pas envahissant */
+  padding: 30px;
+  gap: 14px;
+
+  overflow-x: auto;
+  overflow-y: visible;
+
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 14px;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
 
   /* cartes */
   .cb-employees__grid .cb-employee-card {
