@@ -1668,7 +1668,6 @@ body {
   .cb-employees__grid {
     position: relative;
     display: flex;
-    width: 100%;
     max-width: 100%;
     padding: 30px;
     overflow-x: auto;
@@ -1722,8 +1721,6 @@ body {
   pointer-events: none;
   opacity: 0.6;
 }
-}
-@media (max-width: 768px) {
   .cb-employee-card--placeholder {
     flex: 0 0 86%;
     max-width: 86%;
@@ -1732,6 +1729,7 @@ body {
     pointer-events: none;
   }
 }
+
 /* =======================================================
    7.B — CARTES EMPLOYÉS
    Styles professionnels, animations douces,
