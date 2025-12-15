@@ -1,0 +1,151 @@
+/* =======================================================
+   BLOC 6 — RESPONSIVE GLOBAL (MOBILE + ANTI-ZOOM + LAYOUT)
+   ======================================================= */
+
+/* -------------------------------------------------------
+   6.1 — ANTI-ZOOM AUTOMATIQUE SUR iOS
+   iPhone zoome si un input a une font-size < 16px
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+    touch-action: manipulation; /* évite des zooms & comportements bizarres */
+  }
+}
+
+
+/* -------------------------------------------------------
+   6.2 — ANTI-SCROLL HORIZONTAL GLOBAL
+   Empêche le débordement des pages
+   ------------------------------------------------------- */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.cb-main {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .cb-main,
+  .cb-content,
+  .cb-card {
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+}
+
+
+/* -------------------------------------------------------
+   6.3 — LAYOUT MOBILE GLOBAL
+   Sidebar -> masque
+   Topbar -> compact
+   Content -> respire (padding)
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .cb-root {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  .cb-sidebar {
+    display: none; /* remplacée par la nav mobile flottante */
+  }
+
+  .cb-main {
+    padding: 8px 0 80px; /* place pour la nav mobile */
+  }
+
+  .cb-content {
+    padding-inline: 12px;
+  }
+
+  .cb-topbar {
+    padding: 10px 16px;
+  }
+
+  .cb-topbar__title {
+    font-size: 16px;
+  }
+
+  .cb-topbar__subtitle {
+    font-size: 11px;
+  }
+
+  .cb-card {
+    border-radius: 14px;
+    padding: 12px;
+  }
+}
+
+
+/* -------------------------------------------------------
+   6.4 — AJUSTEMENTS RESPONSIVE SPÉCIFIQUES
+   Planning / Présence / Employés (pas de débordement)
+   ------------------------------------------------------- */
+
+/* ---- Planning mobile ---- */
+@media (max-width: 768px) {
+  .cb-planning__mobile-view,
+  .cb-planning__mobile-employees {
+    max-width: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .cb-planning__mobile-emp-row {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .cb-planning__shift-pill {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ---- Présence mobile ---- */
+@media (max-width: 768px) {
+  .cb-presence__table-wrapper {
+    overflow-x: hidden;
+  }
+
+  .cb-presence-main {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .cb-presence__row {
+    gap: 6px;
+  }
+
+  .cb-presence__ca-card,
+  .cb-presence__employees-card {
+    border-radius: 16px;
+  }
+}
+
+
+
+/* -------------------------------------------------------
+   6.5 — NAV MOBILE FLOTTANTE (compatibilité popups & modales)
+   ------------------------------------------------------- */
+
+.cb-bottom-nav,
+.cb-nav-floating,
+.cb-mobile-nav {
+  z-index: 20; /* sous les modales mais au-dessus du contenu */
+}
+
+.cb-modal,
+.cb-modal-backdrop {
+  z-index: 90; /* les modales passent AU-DESSUS */
+}

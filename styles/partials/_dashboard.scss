@@ -1,0 +1,136 @@
+/* =======================================================
+   BLOC 4 — DASHBOARD (HEADER + CARDS + STATS + REQUESTS)
+   ======================================================= */
+
+/* -------------------------------------------------------
+   4.1 — HEADER DU DASHBOARD
+   ------------------------------------------------------- */
+
+.cb-dashboard-header {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cb-dashboard-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cb-dashboard-header__date {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+/* -------------------------------------------------------
+   4.2 — GRILLE DES CARTES DU DASHBOARD
+   ------------------------------------------------------- */
+
+.cb-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .cb-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* -------------------------------------------------------
+   4.3 — CARTE DU DASHBOARD
+   ------------------------------------------------------- */
+
+.cb-dashboard-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cb-dashboard-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cb-dashboard-card__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cb-dashboard-card__subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cb-dashboard-card__link {
+  font-size: 12px;
+  color: #2563eb;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cb-dashboard-card__link:hover {
+  text-decoration: underline;
+}
+
+/* -------------------------------------------------------
+   4.4 — STATS À L’INTÉRIEUR DES CARTES
+   ------------------------------------------------------- */
+
+.cb-dashboard-card__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .cb-dashboard-card__stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cb-dashboard-stat__label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.cb-dashboard-stat__value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------
+   4.5 — LISTE DES DEMANDES RÉCENTES
+   ------------------------------------------------------- */
+
+.cb-dashboard-requests {
+  margin-top: 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.cb-dashboard-requests li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.cb-dashboard-requests__type {
+  font-weight: 500;
+}
+
+.cb-dashboard-requests__date {
+  color: #6b7280;
+}
+
+.cb-dashboard-requests__more {
+  font-style: italic;
+  color: #6b7280;
+}

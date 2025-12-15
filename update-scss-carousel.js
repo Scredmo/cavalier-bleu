@@ -81,6 +81,13 @@ function replaceOrInsert(content) {
 
 try {
   const content = readFileSync(scssPath, "utf-8");
+
+  // Si le projet utilise désormais des partiels SCSS, on ne touche à rien.
+  if (content.includes('@use "./partials/employees";')) {
+    console.log("ℹ️ Structure SCSS modulaire détectée — script carrousel ignoré.");
+    process.exit(0);
+  }
+
   const next = replaceOrInsert(content);
   writeFileSync(scssPath, next, "utf-8");
   console.log("✅ SCSS mis à jour : bloc carrousel remplacé/injecté entre marqueurs.");

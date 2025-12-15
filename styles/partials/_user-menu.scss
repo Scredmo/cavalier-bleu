@@ -1,0 +1,317 @@
+/* =======================================================
+   BLOC 8 — INTERFACE UTILISATEUR (CLEAN / PREMIUM)
+   Compatible avec app/layout.tsx actuel
+   ======================================================= */
+
+/* Conteneur <details> */
+.cb-user-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Reset du <summary> */
+.cb-user-menu > summary {
+  list-style: none;
+}
+.cb-user-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ✅ Trigger "avatar only" — rond, discret, premium */
+.cb-user-menu__trigger--avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.cb-user-menu__trigger--avatar:hover {
+  border-color: rgba(79, 70, 229, 0.22);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
+  transform: translateY(-1px);
+}
+
+/* Halo quand le menu est ouvert */
+.cb-user-menu[open] .cb-user-menu__trigger--avatar {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow:
+    0 16px 36px rgba(15, 23, 42, 0.16),
+    0 0 0 6px rgba(99, 102, 241, 0.12);
+}
+
+/* Avatar rond */
+.cb-user-menu__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  background: rgba(99, 102, 241, 0.10);
+  display: block;
+}
+
+/* Image avatar */
+.cb-user-menu__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ✅ Position flottante en haut à droite */
+.cb-topbar__right--floating {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 80;
+}
+
+@media (max-width: 768px) {
+  .cb-topbar__right--floating {
+    top: calc(10px + env(safe-area-inset-top));
+    right: 10px;
+  }
+
+  .cb-user-menu__trigger--avatar:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ✅ Panel (dropdown) — version premium */
+.cb-user-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: min(320px, calc(100vw - 24px));
+
+  border-radius: 20px;
+  padding: 14px;
+
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow:
+    0 30px 70px rgba(15, 23, 42, 0.18),
+    0 8px 20px rgba(15, 23, 42, 0.08);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  z-index: 80;
+  transform-origin: top right;
+  animation: cbUserMenuPop 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes cbUserMenuPop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header du panel */
+.cb-user-menu__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(255, 255, 255, 0.4)
+  );
+  border: 1px solid rgba(99, 102, 241, 0.18);
+}
+
+.cb-user-menu__meta-name {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.cb-user-menu__meta-sub {
+  font-weight: 600;
+  opacity: 0.7;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* Items */
+.cb-user-menu__items {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.cb-user-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.60);
+
+  transition: background 140ms ease, transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.cb-user-menu__item:hover {
+  border-color: rgba(79, 70, 229, 0.22);
+  background: rgba(99, 102, 241, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+.cb-user-menu__item-ico {
+  width: 22px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+/* Danger */
+.cb-user-menu__item--danger {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.12);
+}
+
+.cb-user-menu__item--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.22);
+}
+/* ===== iOS Tap / Press effect (premium) ===== */
+
+/* Petit "tap" tactile */
+.cb-user-menu__trigger--avatar:active {
+  transform: scale(0.96);
+}
+
+/* Pour éviter le flash bleu iOS + rendu plus propre */
+.cb-user-menu__trigger--avatar {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Sur desktop (hover), on garde ton hover normal, et on évite :active trop agressif */
+@media (hover: hover) and (pointer: fine) {
+  .cb-user-menu__trigger--avatar:active {
+    transform: translateY(-1px) scale(0.99);
+  }
+}
+
+/* Petit rebond "release" iOS-like */
+.cb-user-menu__trigger--avatar {
+  transition:
+    transform 140ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+/* ===== Profil (premium) ===== */
+.cb-profile {
+  display: flex;
+  justify-content: center;
+}
+
+.cb-profile__card {
+  width: 100%;
+  max-width: 720px;
+}
+
+.cb-profile__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cb-profile__identity {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.cb-profile__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  background: rgba(99, 102, 241, 0.10);
+  flex: 0 0 auto;
+}
+
+.cb-profile__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cb-profile__meta {
+  min-width: 0;
+}
+
+.cb-profile__name {
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.cb-profile__sub {
+  margin-top: 4px;
+  opacity: 0.75;
+  font-weight: 700;
+}
+
+.cb-profile__section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.cb-profile__label {
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.cb-profile__picker {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.cb-profile__file {
+  width: 100%;
+}
+
+.cb-profile__hint {
+  margin-top: 10px;
+  opacity: 0.7;
+  font-weight: 600;
+}

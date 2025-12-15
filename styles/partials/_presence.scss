@@ -1,0 +1,673 @@
+/* ==========================================
+   BLOC — PRÉSENCE (Page en onglets)
+   - Tabs (Présence / Caisse / Dépenses / Récap)
+   - Tables & lignes employé
+   - Inputs (heures, statut, CA, dépenses)
+   - Responsive mobile + mode compact (html[data-compact="1"])
+   ========================================== */
+
+/* Page wrapper */
+.cb-presence {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 96px; /* place pour la bottom nav */
+}
+
+.cb-presence__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cb-presence__title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.cb-presence__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .cb-presence__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* -----------------------------
+   Tabs
+----------------------------- */
+
+.cb-presence__tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.70);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow-x: auto;
+}
+
+.cb-presence__tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.70);
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease,
+    background 160ms ease, opacity 160ms ease;
+}
+
+.cb-presence__tab:hover {
+  border-color: rgba(79, 70, 229, 0.22);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+  transform: translateY(-1px);
+}
+
+.cb-presence__tab:active {
+  transform: scale(0.985);
+}
+
+.cb-presence__tab--active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(255, 255, 255, 0.85));
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow:
+    0 14px 34px rgba(15, 23, 42, 0.12),
+    0 0 0 6px rgba(99, 102, 241, 0.10);
+}
+
+.cb-presence__tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.cb-presence__tab--active .cb-presence__tab-badge {
+  background: rgba(99, 102, 241, 0.14);
+  border-color: rgba(99, 102, 241, 0.18);
+}
+
+/* -----------------------------
+   Panels
+----------------------------- */
+
+.cb-presence__panel {
+  border-radius: 26px;
+  padding: 18px;
+  background: radial-gradient(circle at 15% 0%, rgba(238, 242, 255, 0.9), rgba(255, 255, 255, 1) 55%);
+  border: 1px solid rgba(148, 163, 184, 0.30);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+}
+
+@media (max-width: 768px) {
+  .cb-presence__panel {
+    padding: 14px;
+    border-radius: 22px;
+  }
+}
+
+.cb-presence__panel-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cb-presence__panel-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.cb-presence__panel-title p {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* -----------------------------
+   Table container
+----------------------------- */
+
+.cb-presence__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.cb-presence__thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 900;
+  color: #0f172a;
+  padding: 12px 12px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.78));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.26);
+  white-space: nowrap;
+}
+
+.cb-presence__tbody td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  vertical-align: middle;
+}
+
+.cb-presence__tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cb-presence__row {
+  transition: background 160ms ease;
+}
+
+.cb-presence__row:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* -----------------------------
+   Cells
+----------------------------- */
+
+.cb-presence__emp {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cb-presence__emp-name {
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.cb-presence__emp-sub {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.cb-presence__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.70);
+  white-space: nowrap;
+}
+
+.cb-presence__pill--ok {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.22);
+}
+
+.cb-presence__pill--warn {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.24);
+}
+
+.cb-presence__pill--bad {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.22);
+}
+
+.cb-presence__muted {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* -----------------------------
+   Inputs
+----------------------------- */
+
+.cb-presence__input,
+.cb-presence__select {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 120ms ease;
+}
+
+.cb-presence__input:focus,
+.cb-presence__select:focus {
+  border-color: rgba(99, 102, 241, 0.55);
+  box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.14);
+}
+
+.cb-presence__input:active {
+  transform: scale(0.995);
+}
+
+.cb-presence__input--time {
+  width: 110px;
+}
+
+.cb-presence__input--money {
+  width: 140px;
+}
+
+.cb-presence__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.cb-presence__hint {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+/* -----------------------------
+   Cards inside panels (for totals)
+----------------------------- */
+
+.cb-presence__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cb-presence__card {
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+}
+
+.cb-presence__card-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.cb-presence__card-value {
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+@media (max-width: 900px) {
+  .cb-presence__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* -----------------------------
+   Mobile table -> horizontal scroll
+----------------------------- */
+
+@media (max-width: 768px) {
+  .cb-presence__table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 18px;
+  }
+}
+
+/* -----------------------------
+   Compact mode tweaks
+----------------------------- */
+
+html[data-compact="1"] .cb-presence {
+  gap: 12px;
+}
+
+html[data-compact="1"] .cb-presence__panel {
+  padding: 14px;
+}
+
+html[data-compact="1"] .cb-presence__thead th,
+html[data-compact="1"] .cb-presence__tbody td {
+  padding: 10px 10px;
+}
+
+html[data-compact="1"] .cb-presence__tab {
+  padding: 8px 12px;
+}
+
+/* -----------------------------
+   Light helpers for future features
+----------------------------- */
+
+.cb-presence__divider {
+  height: 1px;
+  background: rgba(148, 163, 184, 0.24);
+  margin: 14px 0;
+}
+
+.cb-presence__empty {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px dashed rgba(148, 163, 184, 0.55);
+  color: #475569;
+  font-weight: 800;
+}
+/* ==========================================
+   PRÉSENCE — ONGLET CAISSE
+   Correspond aux classes cb-presence-cash__*
+   ========================================== */
+
+.cb-presence-cash__head {
+  margin-bottom: 14px;
+}
+
+.cb-presence-cash__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.cb-presence-cash__sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* ---------- Table caisse ---------- */
+
+.cb-presence-cash__table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cb-presence-cash__row {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(4, 1fr) 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.cb-presence-cash__row:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.cb-presence-cash__row--head {
+  background: linear-gradient(
+    180deg,
+    rgba(248, 250, 252, 0.95),
+    rgba(255, 255, 255, 0.85)
+  );
+  font-size: 12px;
+  font-weight: 900;
+  color: #475569;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+/* ---------- Cellules ---------- */
+
+.cb-presence-cash__emp {
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.cb-presence-cash__row input {
+  text-align: right;
+}
+
+/* Wrapper cellule (utilisé pour afficher les libellés en mobile) */
+.cb-presence-cash__cell {
+  display: block;
+}
+
+.cb-presence-cash__cell input {
+  width: 100%;
+}
+
+/* Total par employé */
+.cb-presence-cash__total {
+  text-align: right;
+  font-weight: 900;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+/* ---------- Totaux service ---------- */
+
+.cb-presence-cash__totals {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.45);
+}
+
+.cb-presence-cash__totals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cb-presence-cash__totals-grid > div {
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cb-presence-cash__totals-grid span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.cb-presence-cash__totals-grid strong {
+  font-size: 16px;
+  font-weight: 1000;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+/* Total général */
+.cb-presence-cash__grand {
+  grid-column: 1 / -1;
+  background: radial-gradient(
+    circle at 20% 0%,
+    rgba(238, 242, 255, 0.9),
+    rgba(255, 255, 255, 0.95) 55%
+  );
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.cb-presence-cash__grand strong {
+  font-size: 20px;
+}
+
+/* ---------- Hint ---------- */
+
+.cb-presence-cash__hint {
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+  /* Mobile: chaque ligne en colonne + libellés visibles */
+  .cb-presence-cash__row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .cb-presence-cash__row--head {
+    display: none;
+  }
+
+  .cb-presence-cash__emp {
+    font-size: 15px;
+    padding-bottom: 8px;
+    margin-bottom: 2px;
+    border-bottom: 1px dashed rgba(148, 163, 184, 0.45);
+  }
+
+  /* Chaque champ affiche son libellé via data-label */
+  .cb-presence-cash__cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.70);
+    border: 1px solid rgba(148, 163, 184, 0.26);
+  }
+
+  .cb-presence-cash__cell::before {
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 900;
+    color: #64748b;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .cb-presence-cash__cell input {
+    width: 140px;
+    max-width: 55vw;
+  }
+
+  /* Total employé en bas, bien lisible */
+  .cb-presence-cash__total {
+    width: 100%;
+    justify-self: stretch;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  .cb-presence-cash__totals-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Compact mode ---------- */
+
+html[data-compact="1"] .cb-presence-cash__row {
+  padding: 8px 10px;
+}
+
+html[data-compact="1"] .cb-presence-cash__totals-grid > div {
+  padding: 10px;
+}
+/* ===== Caisse : inputs bien visibles ===== */
+
+.cb-presence-cash__row input {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+  text-align: right;
+
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease;
+}
+
+/* Focus clair : on voit ce qu’on remplit */
+.cb-presence-cash__row input:focus {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: #ffffff;
+  box-shadow: 0 0 0 5px 
+  rgba(99, 102, 241, 0.18);
+}
+/* Champ rempli → feedback visuel */
+.cb-presence-cash__row input:not(:placeholder-shown) {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+/* Total employé */
+.cb-presence-cash__total {
+  background: rgba(99, 102, 241, 0.10);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 1000;
+  font-size: 14px;
+  text-align: right;
+  color: #1e3a8a;
+}
+@media (max-width: 768px) {
+  .cb-presence-cash__row input {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  .cb-presence-cash__total {
+    font-size: 15px;
+  }
+}

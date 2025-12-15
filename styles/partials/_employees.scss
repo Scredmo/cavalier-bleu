@@ -1,0 +1,521 @@
+/* ==========================================
+   BLOC 7 — EMPLOYÉS
+   7.A Layout global + header + slider mobile
+   7.B Cartes employé (desktop + mobile)
+   7.C Modal d’ajout / édition employé
+   ========================================== */
+
+/* === Carrousel mobile & styles cartes employés === */
+
+/* ------------------------------------------
+   7.A — LAYOUT GLOBAL + HEADER + SLIDER
+------------------------------------------- */
+
+/* Add bottom padding for mobile nav bar */
+.cb-employees {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 96px; // laisse de la place pour la barre de nav
+}
+
+/* Titre / sous-titre de page */
+/* Scope title/subtitle to Employees page to avoid global conflicts */
+.cb-employees .cb-dashboard__title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.cb-employees .cb-dashboard__subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 2px 0 0;
+}
+
+.cb-employees__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Grille principale */
+.cb-employees__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  border-radius: 26px;
+  padding: 30px;
+
+  /* Fond “panneau” plus pro derrière les cartes */
+  background: radial-gradient(circle at 0 0, #4f46e5 0%, #52a9ff 45%, #fff 100%);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+}
+
+/* Tablette */
+@media (max-width: 1024px) {
+  .cb-employees__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Slider visible uniquement en mobile */
+/* Slider visible uniquement en mobile */
+.cb-employees__mobile-slider {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 20px;
+  position: relative;
+
+  background: linear-gradient(135deg, #0c1224, #0f172a);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.55);
+  color: #e5e7eb;
+}
+
+.cb-employees__slider-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #e5e7eb;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.cb-employees__slider-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 18px;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.45);
+}
+
+.cb-employees__slider-btn.cb-button--ghost {
+  background: radial-gradient(circle at 30% 0, rgba(248, 250, 252, 0.12), rgba(15, 23, 42, 0.3));
+  border-color: rgba(148, 163, 184, 0.5);
+  color: #e5e7eb;
+}
+
+.cb-employees__slider-btn.cb-button--ghost:hover {
+  background: radial-gradient(circle at 30% 0, rgba(248, 250, 252, 0.18), rgba(15, 23, 42, 0.4));
+  border-color: rgba(191, 219, 254, 0.9);
+}
+
+.cb-employees__slider-progress {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: -10px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+  overflow: hidden;
+  backdrop-filter: blur(2px);
+}
+
+.cb-employees__slider-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38bdf8, #4f46e5);
+  transition: width 0.2s ease;
+}
+
+@media (max-width: 768px) {
+
+  .cb-employees__mobile-slider {
+    display: flex;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    z-index: 10;
+  }
+
+  /* Carrousel mobile : défilement horizontal */
+  .cb-employees__grid {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+
+  /* ✅ air léger, pas envahissant */
+  padding: 30px;
+  gap: 14px;
+
+  overflow-x: auto;
+  overflow-y: visible;
+
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 14px;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+  /* cartes */
+  .cb-employees__grid .cb-employee-card {
+    flex: 0 0 86%;
+    max-width: 86%;
+    margin-inline: auto;
+
+    position: relative;
+    z-index: 1;
+
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+
+    transform: scale(0.965);
+    opacity: 0.82;
+
+    transition: transform 0.22s ease, opacity 0.22s ease,
+      box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+
+  /* carte active au premier plan */
+  .cb-employees__grid .cb-employee-card--active {
+    z-index: 10;
+    transform: translateY(-8px) scale(1.02);
+    opacity: 1;
+    border-color: rgba(79, 70, 229, 0.8);
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.20);
+  }
+
+  /* optionnel : barre de scroll discrète */
+  .cb-employees__grid::-webkit-scrollbar {
+    height: 6px;
+  }
+  .cb-employees__grid::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    border-radius: 999px;
+  }
+  .cb-employees__grid::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .cb-employee-card--clone {
+  pointer-events: none;
+  opacity: 0.6;
+}
+  .cb-employee-card--placeholder {
+    flex: 0 0 86%;
+    max-width: 86%;
+    scroll-snap-align: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* =======================================================
+   7.B — CARTES EMPLOYÉS
+   Styles professionnels, animations douces,
+   lisibilité optimisée (desktop + mobile)
+======================================================= */
+
+/* ----- Carte générale ----- */
+.cb-employee-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  padding: 18px 18px 14px;
+  border-radius: 22px;
+
+  /* Fond premium type dashboard SaaS */
+  background: radial-gradient(circle at 20% 0%, #eef2ff 0%, #ffffff 45%, #ffffff 100%);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.07);
+
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+              border-color 0.18s ease, opacity 0.18s ease;
+}
+.cb-employee-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+/* Animation ouverture/fermeture des détails employés */
+.cb-employee-card__details {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  transition:
+    max-height 0.25s ease,
+    opacity 0.18s ease,
+    transform 0.25s ease;
+}
+
+/* Quand la carte est en mode "voir plus" */
+.cb-employee-card--expanded .cb-employee-card__details {
+  max-height: 600px; // ajuste si besoin selon la hauteur
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* petit effet sur la carte elle-même quand ouverte */
+.cb-employee-card {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.cb-employee-card--expanded {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.35);
+}
+
+
+
+/* ----- HEADER carte ----- */
+.cb-employee-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cb-employee-card__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px; // ajuste si tu veux un peu plus large
+}
+
+.cb-employee-card__role {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: -2px;
+}
+
+/* ----- Bouton “Modifier” dans la carte ----- */
+.cb-employee-card__edit-btn {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  border: 1px solid #e5e7eb;
+  color: #475569;
+  background: #f8fafc;
+}
+
+.cb-employee-card__edit-btn:hover {
+  background: #eef2ff;
+  color: #1e3a8a;
+}
+
+/* ----- BODY des sections ----- */
+.cb-employee-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ----- Bloc interne gris clair ----- */
+.cb-employee-card__section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cb-employee-card__section-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+/* ----- Row interne ----- */
+.cb-employee-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  flex-direction: column;
+}
+
+.cb-employee-card__label {
+  color: #64748b;
+}
+
+.cb-employee-card__value {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* ----- Row avec indicateur ----- */
+.cb-employee-card__row--indicator {
+  align-items: center;
+}
+/* Icône (téléphone, mail, adresse, banque...) dans les lignes de la carte */
+.cb-employee-card__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
+
+/* ----- Indicateurs heures / contrat ----- */
+.cb-employee__indicator {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Couleurs selon état */
+.cb-employee__indicator--none {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.cb-employee__indicator--low {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.cb-employee__indicator--almost {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cb-employee__indicator--ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cb-employee__indicator--extra {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+/* ----- FOOTER carte ----- */
+.cb-employee-card__footer {
+  display: flex;
+  
+}
+
+.cb-employee-card__delete {
+  margin-left: auto;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.1s ease;
+}
+
+.cb-employee-card__delete:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------
+   MODAL EMPLOYÉ (plein écran centré)
+   ------------------------------------------------------- */
+.cb-employee-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  z-index: 140;
+}
+
+.cb-employee-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.cb-employee-modal__content {
+  position: relative;
+  width: min(640px, 96vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: 18px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.5);
+  z-index: 1;
+  border: 1px solid #e5e7eb;
+}
+
+.cb-employee-modal__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.cb-employee-modal__subtitle {
+  margin: 4px 0 12px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.cb-employee-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cb-employee-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cb-employee-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cb-employee-modal__field label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cb-employee-modal__field input,
+.cb-employee-modal__field select {
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+.cb-employee-modal__field--full {
+  grid-column: 1 / -1;
+}
+
+.cb-employee-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .cb-employee-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}

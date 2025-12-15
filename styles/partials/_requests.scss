@@ -1,0 +1,212 @@
+/* =======================================================
+   BLOC 5 — DEMANDES (formulaire + liste + historique)
+   ======================================================= */
+
+/* -------------------------------------------------------
+   5.1 — FORMULAIRE D’AJOUT D’UNE DEMANDE
+   ------------------------------------------------------- */
+
+.cb-requests-form {
+  margin-bottom: 16px;
+}
+
+.cb-requests-form__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cb-requests-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-requests-form__field label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cb-requests-form__field input,
+.cb-requests-form__field select,
+.cb-requests-form__field textarea {
+  border-radius: 14px;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+.cb-requests-form__field textarea {
+  resize: vertical;
+}
+
+.cb-requests-form__field--small {
+  max-width: 190px;
+}
+
+.cb-requests-form__field--full {
+  grid-column: 1 / -1;
+}
+
+.cb-requests-form__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cb-requests-form__hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+
+/* -------------------------------------------------------
+   5.2 — LISTE DES DEMANDES EN ATTENTE
+   ------------------------------------------------------- */
+
+.cb-requests-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cb-requests-list__today {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.cb-requests-empty {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.cb-requests-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+
+/* -------------------------------------------------------
+   5.3 — CARTE INDIVIDUELLE D’UNE DEMANDE
+   ------------------------------------------------------- */
+
+.cb-request-card {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  background: #f9fafb;
+}
+
+.cb-request-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.cb-request-card__employee {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.cb-request-card__meta {
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cb-request-card__message {
+  font-size: 12px;
+  color: #4b5563;
+  margin: 4px 0 6px;
+}
+
+.cb-request-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cb-request-card__btn {
+  font-size: 12px;
+  padding-inline: 10px;
+}
+
+
+/* -------------------------------------------------------
+   5.4 — CHIPS D’ÉTAT (warning / danger / info…)
+   ------------------------------------------------------- */
+
+.cb-chip--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cb-chip--warning:hover {
+  background: #fde68a;
+}
+
+.cb-chip--danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.cb-chip--danger:hover {
+  background: #fecaca;
+}
+
+
+/* -------------------------------------------------------
+   5.5 — HISTORIQUE DES DEMANDES ACCEPTÉES
+   ------------------------------------------------------- */
+
+.cb-requests-history {
+  margin-top: 12px;
+}
+
+.cb-requests-history__list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.cb-requests-history__item {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+
+.cb-requests-history__status {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+
+/* -------------------------------------------------------
+   5.6 — RESPONSIVE
+   ------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .cb-requests-form__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cb-requests-form__field--small {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .cb-requests-form__grid {
+    grid-template-columns: 1fr;
+  }
+}

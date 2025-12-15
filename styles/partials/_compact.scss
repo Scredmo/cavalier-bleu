@@ -1,0 +1,180 @@
+/* =======================================================
+   MODE COMPACT — GLOBAL (App entière)
+   Active quand: html[data-compact="1"]
+   ======================================================= */
+
+html[data-compact="1"] .cb-content {
+  padding-top: 12px; /* moins d’air en haut */
+}
+
+html[data-compact="1"] .cb-topbar {
+  padding: 10px 12px;
+  min-height: 52px;
+}
+
+html[data-compact="1"] .cb-topbar__title {
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+html[data-compact="1"] .cb-topbar__subtitle {
+  display: none; /* option premium : on enlève le sous-titre en compact */
+}
+
+/* Cards / sections */
+html[data-compact="1"] .cb-card {
+  padding: 12px;
+}
+
+html[data-compact="1"] .cb-employee-card__body {
+  padding-top: 10px;
+}
+
+html[data-compact="1"] .cb-employee-card__section {
+  padding: 10px 10px;
+}
+
+html[data-compact="1"] .cb-employee-card__row {
+  padding: 8px 0;
+  gap: 10px;
+}
+
+/* Boutons */
+html[data-compact="1"] .cb-button {
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+html[data-compact="1"] .cb-button--ghost {
+  padding: 7px 10px;
+}
+
+/* Inputs / selects (modals, forms, settings, etc.) */
+html[data-compact="1"] input,
+html[data-compact="1"] select,
+html[data-compact="1"] textarea {
+  padding: 10px 10px;
+  border-radius: 12px;
+}
+
+/* Grilles “type settings” (gaps plus serrés) */
+html[data-compact="1"] .cb-settings__grid {
+  gap: 8px;
+}
+
+/* Tables/listes si tu en as */
+html[data-compact="1"] .cb-table th,
+html[data-compact="1"] .cb-table td {
+  padding: 8px 10px;
+}
+
+/* Bottom nav mobile : un peu plus slim */
+@media (max-width: 768px) {
+  html[data-compact="1"] .cb-bottom-nav {
+    height: 56px;
+  }
+  html[data-compact="1"] .cb-bottom-nav__item {
+    padding: 8px 10px;
+  }
+}
+
+/* =======================================================
+   MODE COMPACT — MOBILE (iPhone / Android)
+   Objectif: garder le style premium mais gagner de la place
+   ======================================================= */
+
+@media (max-width: 768px) {
+  html[data-compact="1"] .cb-content {
+    padding: 10px 12px 76px; /* respire mais compact + place nav */
+  }
+
+  /* Topbar: comme tu veux juste l’avatar flottant, on compacte fort */
+  html[data-compact="1"] .cb-topbar {
+    padding: 8px 12px;
+    min-height: 44px;
+  }
+
+  /* Avatar flottant un poil plus petit en compact */
+  html[data-compact="1"] .cb-topbar__right--floating {
+    top: calc(8px + env(safe-area-inset-top));
+    right: 8px;
+  }
+
+  html[data-compact="1"] .cb-user-menu__trigger--avatar {
+    padding: 5px;
+  }
+
+  html[data-compact="1"] .cb-user-menu__avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Cards global */
+  html[data-compact="1"] .cb-card {
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  /* Employés: carrousel plus serré */
+  html[data-compact="1"] .cb-employees {
+    gap: 12px;
+    margin-bottom: 84px;
+  }
+
+  html[data-compact="1"] .cb-employees__mobile-slider {
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  html[data-compact="1"] .cb-employees__grid {
+    padding: 18px; /* au lieu de 30px */
+    gap: 12px;
+    scroll-padding-inline: 12px;
+  }
+
+  html[data-compact="1"] .cb-employees__grid .cb-employee-card {
+    flex-basis: 88%;
+    max-width: 88%;
+    padding: 16px 16px 12px;
+  }
+
+  html[data-compact="1"] .cb-employee-card__name {
+    font-size: 16px;
+    max-width: 160px;
+  }
+
+  html[data-compact="1"] .cb-employee-card__section {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  html[data-compact="1"] .cb-employee-card__section-header {
+    font-size: 12px;
+  }
+
+  html[data-compact="1"] .cb-employee__indicator {
+    padding: 3px 10px;
+    font-size: 10px;
+  }
+
+  /* Modal employé: plus compact sur iPhone */
+  html[data-compact="1"] .cb-employee-modal {
+    padding: 12px 10px;
+  }
+
+  html[data-compact="1"] .cb-employee-modal__content {
+    border-radius: 16px;
+    padding: 14px 14px 12px;
+    max-height: 92vh;
+  }
+
+  html[data-compact="1"] .cb-employee-modal__grid {
+    gap: 8px;
+  }
+
+  html[data-compact="1"] .cb-employee-modal__field input,
+  html[data-compact="1"] .cb-employee-modal__field select {
+    padding: 10px 10px;
+    border-radius: 12px;
+  }
+}

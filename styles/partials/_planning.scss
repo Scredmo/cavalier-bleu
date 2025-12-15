@@ -1,0 +1,761 @@
+/* =======================================================
+   BLOC 2 — PLANNING + MODAL + MOBILE + PRÉSENCE + DÉPENSES
+   ======================================================= */
+
+/* -------------------------------------------------------
+   2.1 — PLANNING (TABLE DESKTOP)
+   ------------------------------------------------------- */
+
+.cb-planning__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.cb-planning__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.cb-planning__head-cell {
+  padding: 8px 6px;
+  text-align: center;
+  color: #6b7280;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  background: #eff4ff;
+  white-space: nowrap;
+}
+
+.cb-planning__section-row td {
+  padding: 4px 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+  background: #f8fafc;
+  text-transform: uppercase;
+}
+
+.cb-planning__employee-cell {
+  padding: 8px 10px;
+  white-space: nowrap;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 500;
+}
+
+.cb-planning__cell {
+  position: relative;
+  padding: 6px 4px 10px;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------
+   2.2 — PLANNING : SHIFT PILLS
+   ------------------------------------------------------- */
+
+.cb-planning__shift-pill {
+  border-radius: 999px;
+  padding: 6px 10px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.cb-planning__shift-pill--off {
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+.cb-planning__shift-pill--midi {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.cb-planning__shift-pill--soir {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.cb-planning__shift-pill--journee {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cb-planning__shift-pill--custom {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cb-planning__shift-pill--leave {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+.cb-planning__shift-hours {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------
+   2.3 — PLANNING : MODAL SHIFT (popup)
+   ------------------------------------------------------- */
+
+@keyframes cb-modal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+}
+
+.cb-modal {
+  width: 90%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.5);
+  animation: cb-modal-pop 0.16s ease-out;
+}
+
+.cb-modal__title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cb-modal__subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.cb-modal__list {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.cb-modal__list-btn {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 13px;
+  background: #ffffff;
+  border: none;
+}
+
+.cb-modal__list-btn:hover {
+  background: #eef2ff;
+}
+
+.cb-modal__actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+/* -------------------------------------------------------
+   2.4 — PLANNING MOBILE : liste des employés
+   ------------------------------------------------------- */
+
+.cb-planning__mobile-employees {
+  display: flex;
+  flex-direction: column;
+}
+
+.cb-planning__mobile-emp-row {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffffff, #f9fafb);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.cb-planning__mobile-emp-row--active {
+  border-color: #4f46e5;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.35);
+  background: linear-gradient(135deg, #eef2ff, #ffffff);
+}
+
+/* -------------------------------------------------------
+   2.5 — PRINT (PDF planning équipe)
+   ------------------------------------------------------- */
+
+.cb-planning__print-wrapper {
+  display: none;
+}
+
+@media print {
+  body { background: #ffffff !important; }
+
+  .cb-sidebar,
+  .cb-topbar,
+  .cb-bottom-nav,
+  .cb-button,
+  .cb-planning-summary,
+  .cb-planning-main {
+    display: none !important;
+  }
+
+  .cb-content {
+    padding: 0 !important;
+  }
+
+  .cb-planning__print-wrapper {
+    display: block !important;
+  }
+}
+
+/* -------------------------------------------------------
+   2.6 — PRÉSENCE : tableaux + inputs + affichage
+   ------------------------------------------------------- */
+
+.cb-presence-main { margin-top: 8px; }
+
+.cb-presence__table-wrapper { width: 100%; overflow-x: auto; }
+
+.cb-presence__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cb-presence__table th,
+.cb-presence__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cb-presence__employee-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Inputs */
+.cb-presence__time-input,
+.cb-presence__note-input,
+.cb-presence__ca-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.cb-presence__ca-input { max-width: 110px; }
+
+/* Checkbox */
+.cb-presence__checkbox {
+  display: inline-flex;
+  position: relative;
+}
+.cb-presence__checkbox input { opacity: 0; position: absolute; }
+.cb-presence__checkbox span {
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+}
+.cb-presence__checkbox input:checked + span {
+  background: #22c55e;
+  border-color: #16a34a;
+}
+/* -------------------------------------------------------
+   2.6 bis — HEADER + RÉCAP JOURNALIER + TABLE PRINCIPALE
+   ------------------------------------------------------- */
+
+/* Header de la page présence */
+.cb-presence__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cb-presence__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Input date dans le header */
+.cb-input-date {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+/* -------------------------------------------------------
+   Récap journalier (card en haut)
+   ------------------------------------------------------- */
+
+.cb-presence-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cb-presence-summary__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cb-presence-summary__label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cb-presence-summary__value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cb-presence-summary__hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* -------------------------------------------------------
+   Tableau principal (écran)
+   ------------------------------------------------------- */
+
+.cb-presence__table--main {
+  width: 100%;
+}
+
+.cb-presence__row {
+  transition: background 0.12s ease;
+}
+
+.cb-presence__row:hover {
+  background: #f9fafb;
+}
+
+.cb-presence__cell {
+  vertical-align: middle;
+}
+
+/* Label de cellule (utilisé en mobile) */
+.cb-presence__cell-label {
+  display: none;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+/* Infos employé */
+.cb-presence__employee-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.cb-presence__employee-role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Valeur heures */
+.cb-presence__hours-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* CA désactivé (cuisine) */
+.cb-presence__ca-disabled {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* -------------------------------------------------------
+   2.6 ter — RESPONSIVE TABLEAU PRÉSENCE
+   ------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .cb-presence__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cb-presence__header-actions {
+    align-self: stretch;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .cb-presence-summary__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  /* On cache l’entête du tableau, on transforme chaque ligne en “carte” */
+  .cb-presence__table--main thead {
+    display: none;
+  }
+
+  .cb-presence__table--main tbody tr.cb-presence__row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+    border-radius: 16px;
+    background: #f9fafb;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .cb-presence__cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+  }
+
+  .cb-presence__cell--employee {
+    align-items: flex-start;
+  }
+
+  .cb-presence__cell-label {
+    display: block;
+  }
+
+  .cb-presence__hours-value {
+    font-size: 13px;
+  }
+
+  .cb-presence__note-input {
+    max-width: 60%;
+  }
+
+  .cb-presence__ca-input {
+    max-width: 120px;
+  }
+}
+
+/* -------------------------------------------------------
+   2.6 quater — PRINT (VERSION PDF FEUILLE DE PRÉSENCE)
+   ------------------------------------------------------- */
+
+.cb-presence-print {
+  display: none;
+}
+
+.cb-presence-print__subtitle {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.cb-presence-print__block {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.cb-presence-print__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+.cb-presence-print__row--total {
+  font-weight: 600;
+}
+
+.cb-presence-print__row--note {
+  font-style: italic;
+  color: #6b7280;
+}
+
+.cb-presence-print__table-wrapper {
+  margin-top: 6px;
+}
+
+.cb-presence-print__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cb-presence-print__table th,
+.cb-presence-print__table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Impression : on affiche seulement la version print */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .cb-sidebar,
+  .cb-topbar,
+  .cb-bottom-nav,
+  .cb-button,
+  .cb-presence-main,
+  .cb-presence-summary {
+    display: none !important;
+  }
+
+  .cb-content {
+    padding: 0 !important;
+  }
+
+  .cb-presence-print {
+    display: block !important;
+  }
+}
+
+/* -------------------------------------------------------
+   2.7 — DÉPENSES
+   ------------------------------------------------------- */
+
+.cb-expenses-form { margin-bottom: 16px; }
+
+.cb-expenses-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cb-expenses-form__field {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-expenses-form__field input {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.cb-expenses-list__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cb-expenses-table-wrapper { width: 100%; overflow-x: auto; }
+
+.cb-expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cb-expenses-table th,
+.cb-expenses-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* -------------------------------------------------------
+   2.8 — HEADER PLANNING + RÉCAP HEURES / COÛTS
+   ------------------------------------------------------- */
+
+/* Header de page (titre + semaine + boutons) */
+.cb-planning__header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.cb-planning__header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cb-planning__header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Section récap en haut (cb-planning-summary) */
+.cb-planning-summary {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Ligne du haut : badge + petite phrase */
+.cb-planning-summary__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.cb-planning-summary__badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cb-planning-summary__hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Bloc des chiffres (heures / coût / charges / total) */
+.cb-planning-summary__numbers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cb-planning-summary__item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cb-planning-summary__item--highlight {
+  background: radial-gradient(circle at top left, #eef2ff, #ffffff);
+  border-color: rgba(79, 70, 229, 0.4);
+}
+
+.cb-planning-summary__label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.cb-planning-summary__value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Contrôles (input % charges) */
+.cb-planning-summary__controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cb-planning-summary__charge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.cb-planning-summary__charge-label input {
+  width: 70px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* -------------------------------------------------------
+   2.9 — WRAPPER PRINCIPAL DU PLANNING
+   ------------------------------------------------------- */
+
+.cb-planning-main {
+  margin-top: 10px;
+}
+
+/* -------------------------------------------------------
+   2.10 — PASTILLES DE RÔLE (planning mobile)
+   ------------------------------------------------------- */
+
+.cb-role-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+/* couleurs par rôle (même logique que pour le reste de l’app) */
+.cb-role-dot--patron {
+  background: #f97316;
+}
+
+.cb-role-dot--responsable {
+  background: #4f46e5;
+}
+
+.cb-role-dot--barman {
+  background: #22c55e;
+}
+
+.cb-role-dot--cuisine {
+  background: #0ea5e9;
+}
+
+.cb-role-dot--serveur {
+  background: #e11d48;
+}
+
+/* -------------------------------------------------------
+   2.11 — RESPONSIVE PLANNING SUMMARY
+   ------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .cb-planning__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cb-planning-summary__numbers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cb-planning-summary__numbers {
+    grid-template-columns: 1fr;
+  }
+}
