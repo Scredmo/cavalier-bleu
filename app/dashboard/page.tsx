@@ -639,7 +639,7 @@ function DashboardPageInner() {
       </div>
 
       {/* KPI mensuels */}
-      <section className="cb-card" style={{ overflow: "hidden", width:"50%"
+      <section className="cb-card kpi-card" style={{ overflow: "hidden", width:"50%"
       }}>
         <div
           style={{

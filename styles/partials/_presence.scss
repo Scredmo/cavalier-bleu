@@ -657,9 +657,6 @@ html[data-compact="1"] .cb-presence__tab { padding: 8px 12px; }
 /* Sticky totals premium sur mobile */
 @media (max-width: 768px) {
   .cb-presence-cash__totals {
-    position: sticky;
-    bottom: 88px; /* laisse la bottom nav respirer */
-    z-index: 20;
     margin-top: 12px;
   }
 
