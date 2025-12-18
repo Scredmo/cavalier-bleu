@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 // Dashboard (v1)
@@ -108,7 +108,7 @@ function safeNum(v: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export default function DashboardPage() {
+function DashboardPageInner() {
   const [telecollect, setTelecollect] = useState<TelecollectState>({});
   const searchParams = useSearchParams();
 
@@ -1178,4 +1178,12 @@ export default function DashboardPage() {
       </section>
     </div> 
     );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardPageInner />
+    </Suspense>
+  );
 }
