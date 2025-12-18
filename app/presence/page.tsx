@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // =====================================================
@@ -257,7 +257,7 @@ function dateToDayKey(date: string): DayKey {
 //    State -> chargement LS -> dérivés -> rendu
 // =====================================================
 
-export default function PresencePage() {
+function PresencePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -2415,6 +2415,14 @@ const toggleCashInclude = (d: string, employeeId: string) => {
       
       </div>
     </div>
+  );
+}
+
+export default function PresencePage() {
+  return (
+    <Suspense fallback={null}>
+      <PresencePageInner />
+    </Suspense>
   );
 }
 
