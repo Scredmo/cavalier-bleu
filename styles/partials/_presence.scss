@@ -6,20 +6,10 @@
    - Responsive mobile + mode compact (html[data-compact="1"])
    ========================================== */
 
-/* Page wrapper */
-.cb-presence {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 96px; /* place pour la bottom nav */
-}
+/* ======================================================
+   1) WRAPPER + HEADER
+   ====================================================== */
 
-.cb-presence__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
 
 .cb-presence__title {
   font-size: 20px;
@@ -42,9 +32,9 @@
   }
 }
 
-/* -----------------------------
-   Tabs
------------------------------ */
+/* ======================================================
+   2) TABS
+   ====================================================== */
 
 .cb-presence__tabs {
   display: flex;
@@ -76,8 +66,12 @@
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease,
-    background 160ms ease, opacity 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    opacity 160ms ease;
 }
 
 .cb-presence__tab:hover {
@@ -91,7 +85,11 @@
 }
 
 .cb-presence__tab--active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(255, 255, 255, 0.85));
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(255, 255, 255, 0.85)
+  );
   border-color: rgba(99, 102, 241, 0.35);
   box-shadow:
     0 14px 34px rgba(15, 23, 42, 0.12),
@@ -117,23 +115,20 @@
   border-color: rgba(99, 102, 241, 0.18);
 }
 
-/* -----------------------------
-   Panels
------------------------------ */
+/* ======================================================
+   3) PANELS
+   ====================================================== */
 
 .cb-presence__panel {
   border-radius: 26px;
   padding: 18px;
-  background: radial-gradient(circle at 15% 0%, rgba(238, 242, 255, 0.9), rgba(255, 255, 255, 1) 55%);
+  background: radial-gradient(
+    circle at 15% 0%,
+    rgba(238, 242, 255, 0.9),
+    rgba(255, 255, 255, 1) 55%
+  );
   border: 1px solid rgba(148, 163, 184, 0.30);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
-}
-
-@media (max-width: 768px) {
-  .cb-presence__panel {
-    padding: 14px;
-    border-radius: 22px;
-  }
 }
 
 .cb-presence__panel-title {
@@ -158,9 +153,9 @@
   color: #64748b;
 }
 
-/* -----------------------------
-   Table container
------------------------------ */
+/* ======================================================
+   4) TABLES (générique)
+   ====================================================== */
 
 .cb-presence__table {
   width: 100%;
@@ -178,17 +173,14 @@
   font-weight: 900;
   color: #0f172a;
   padding: 12px 12px;
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(
+    180deg,
+    rgba(248, 250, 252, 0.95),
+    rgba(255, 255, 255, 0.78)
+  );
   border-bottom: 1px solid rgba(148, 163, 184, 0.26);
   white-space: nowrap;
 }
-
-.cb-presence__tbody td {
-  padding: 12px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-  vertical-align: middle;
-}
-
 .cb-presence__tbody tr:last-child td {
   border-bottom: 0;
 }
@@ -201,10 +193,7 @@
   background: rgba(99, 102, 241, 0.05);
 }
 
-/* -----------------------------
-   Cells
------------------------------ */
-
+/* Cells */
 .cb-presence__emp {
   display: flex;
   flex-direction: column;
@@ -223,6 +212,7 @@
   font-weight: 700;
 }
 
+/* Pills */
 .cb-presence__pill {
   display: inline-flex;
   align-items: center;
@@ -258,18 +248,16 @@
   font-size: 12px;
 }
 
-/* -----------------------------
-   Inputs
------------------------------ */
+/* ======================================================
+   5) INPUTS (générique)
+   ====================================================== */
 
 .cb-presence__input,
 .cb-presence__select {
-  width: 100%;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   background: rgba(255, 255, 255, 0.95);
   padding: 9px 10px;
-  font-size: 13px;
   font-weight: 800;
   color: #0f172a;
   outline: none;
@@ -286,21 +274,14 @@
   transform: scale(0.995);
 }
 
-.cb-presence__input--time {
-  width: 110px;
-}
-
-.cb-presence__input--money {
-  width: 140px;
-}
+.cb-presence__input--time { width: 110px; }
+.cb-presence__input--money { width: 140px; }
 
 .cb-presence__actions {
   display: flex;
   gap: 10px;
   align-items: center;
-  justify-content: flex-end;
   margin-top: 14px;
-  flex-wrap: wrap;
 }
 
 .cb-presence__hint {
@@ -309,9 +290,9 @@
   font-weight: 700;
 }
 
-/* -----------------------------
-   Cards inside panels (for totals)
------------------------------ */
+/* ======================================================
+   6) CARDS (totaux / récap)
+   ====================================================== */
 
 .cb-presence__cards {
   display: grid;
@@ -342,48 +323,111 @@
   color: #0f172a;
 }
 
-@media (max-width: 900px) {
-  .cb-presence__cards {
-    grid-template-columns: 1fr;
-  }
-}
 
-/* -----------------------------
-   Mobile table -> horizontal scroll
------------------------------ */
+/* ======================================================
+   7) RESPONSIVE (tables génériques)
+   ====================================================== */
 
 @media (max-width: 768px) {
+  /* Sur mobile, la table principale devient une liste de cartes lisibles */
   .cb-presence__table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
     border-radius: 18px;
+  }
+
+  /* Table principale uniquement (Présence) */
+  .cb-presence__table--main {
+    border: 0;
+    background: transparent;
+  }
+
+  .cb-presence__table--main .cb-presence__thead {
+    display: none;
+  }
+
+  .cb-presence__table--main .cb-presence__tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  /* Chaque ligne = une carte */
+  .cb-presence__table--main .cb-presence__tbody tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "emp emp"
+      "tog tog"
+      "arr dep"
+      "hrs hrs"
+      "note note";
+    gap: 10px;
+
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+  }
+
+  /* On neutralise les styles "table" */
+  .cb-presence__table--main .cb-presence__tbody td {
+    border: 0;
+    padding: 0;
+  }
+
+  /* 1) Employé */
+  .cb-presence__table--main .cb-presence__tbody td:nth-child(1) {
+    grid-area: emp;
+  }
+
+  /* 2) Présent / Mettre en caisse */
+  .cb-presence__table--main .cb-presence__tbody td:nth-child(2) {
+    grid-area: tog;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* 3) Arrivée / Départ */
+  .cb-presence__table--main .cb-presence__tbody td:nth-child(3) {
+    grid-area: arr;
+  }
+  .cb-presence__table--main .cb-presence__tbody td:nth-child(4) {
+    grid-area: dep;
+  }
+
+  /* 4) Heures */
+  .cb-presence__table--main .cb-presence__tbody td:nth-child(5) {
+    grid-area: hrs;
+  }
+
+  /* 5) Notes */
+  .cb-presence__table--main .cb-presence__tbody td:nth-child(6) {
+    grid-area: note;
+  }
+
+  /* Temps : full width en mobile */
+  .cb-presence__table--main .cb-presence__input--time {
+    width: 30%;
   }
 }
 
-/* -----------------------------
-   Compact mode tweaks
------------------------------ */
+/* ======================================================
+   8) MODE COMPACT
+   ====================================================== */
 
-html[data-compact="1"] .cb-presence {
-  gap: 12px;
-}
-
-html[data-compact="1"] .cb-presence__panel {
-  padding: 14px;
-}
+html[data-compact="1"] .cb-presence { gap: 12px; }
+html[data-compact="1"] .cb-presence__panel { padding: 14px; }
 
 html[data-compact="1"] .cb-presence__thead th,
-html[data-compact="1"] .cb-presence__tbody td {
-  padding: 10px 10px;
-}
+html[data-compact="1"] .cb-presence__tbody td { padding: 10px 10px; }
 
-html[data-compact="1"] .cb-presence__tab {
-  padding: 8px 12px;
-}
+html[data-compact="1"] .cb-presence__tab { padding: 8px 12px; }
 
-/* -----------------------------
-   Light helpers for future features
------------------------------ */
+/* ======================================================
+   9) HELPERS
+   ====================================================== */
 
 .cb-presence__divider {
   height: 1px;
@@ -392,6 +436,8 @@ html[data-compact="1"] .cb-presence__tab {
 }
 
 .cb-presence__empty {
+  margin-top: 20px;
+  text-align: center;
   padding: 18px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.75);
@@ -399,14 +445,12 @@ html[data-compact="1"] .cb-presence__tab {
   color: #475569;
   font-weight: 800;
 }
-/* ==========================================
-   PRÉSENCE — ONGLET CAISSE
-   Correspond aux classes cb-presence-cash__*
-   ========================================== */
 
-.cb-presence-cash__head {
-  margin-bottom: 14px;
-}
+/* ======================================================
+   10) ONGLET CAISSE — DESKTOP
+   ====================================================== */
+
+.cb-presence-cash__head { margin-bottom: 14px; }
 
 .cb-presence-cash__title {
   margin: 0;
@@ -423,24 +467,22 @@ html[data-compact="1"] .cb-presence__tab {
   color: #64748b;
 }
 
-/* ---------- Table caisse ---------- */
-
 .cb-presence-cash__table {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  width: 100%;
+  display: grid;
+  gap: 10px;
   margin-top: 12px;
 }
 
 .cb-presence-cash__row {
   display: grid;
-  grid-template-columns: 1.4fr repeat(4, 1fr) 1fr;
-  gap: 8px;
+  grid-template-columns: 1.2fr repeat(4, 1fr) 1fr;
+  gap: 10px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.26);
   transition: background 160ms ease, box-shadow 160ms ease;
 }
 
@@ -449,47 +491,120 @@ html[data-compact="1"] .cb-presence__tab {
 }
 
 .cb-presence-cash__row--head {
-  background: linear-gradient(
-    180deg,
-    rgba(248, 250, 252, 0.95),
-    rgba(255, 255, 255, 0.85)
-  );
-  font-size: 12px;
+  background: rgba(15, 23, 42, 0.06);
   font-weight: 900;
   color: #475569;
-  border-color: rgba(148, 163, 184, 0.35);
 }
 
-/* ---------- Cellules ---------- */
+.cb-presence-cash__cell {
+  min-width: 0;
+  display: block;
+}
 
 .cb-presence-cash__emp {
   font-weight: 900;
   color: #0f172a;
-  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Inputs caisse : bien visibles */
 .cb-presence-cash__row input {
-  text-align: right;
-}
-
-/* Wrapper cellule (utilisé pour afficher les libellés en mobile) */
-.cb-presence-cash__cell {
-  display: block;
-}
-
-.cb-presence-cash__cell input {
   width: 100%;
-}
-
-/* Total par employé */
-.cb-presence-cash__total {
-  text-align: right;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 14px;
   font-weight: 900;
-  font-size: 13px;
   color: #0f172a;
+  text-align: right;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
 }
 
-/* ---------- Totaux service ---------- */
+.cb-presence-cash__row input:focus {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: #ffffff;
+  box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.18);
+}
+
+/* Champ rempli → feedback visuel */
+.cb-presence-cash__row input:not(:placeholder-shown) {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.cb-presence-cash__total {
+  font-weight: 1000;
+  text-align: right;
+  background: rgba(99, 102, 241, 0.10);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #1e3a8a;
+}
+
+/* ======================================================
+   11) ONGLET CAISSE — RESPONSIVE (mobile en colonne)
+   ====================================================== */
+
+@media (max-width: 900px) {
+  .cb-presence-cash__row--head { display: none; }
+
+  .cb-presence-cash__row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .cb-presence-cash__emp {
+    font-size: 15px;
+    padding-bottom: 8px;
+    margin-bottom: 2px;
+    border-bottom: 1px dashed rgba(148, 163, 184, 0.45);
+  }
+
+  /* Chaque champ affiche son libellé via data-label */
+  .cb-presence-cash__cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.70);
+    border: 1px solid rgba(148, 163, 184, 0.26);
+  }
+
+  .cb-presence-cash__cell::before {
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 900;
+    color: #64748b;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .cb-presence-cash__cell input {
+    width: 140px;
+    max-width: 55vw;
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  .cb-presence-cash__total {
+    width: 100%;
+    text-align: right;
+    margin-top: 4px;
+    font-size: 15px;
+  }
+}
+
+/* ======================================================
+   12) ONGLET CAISSE — TOTAUX + STICKY MOBILE
+   ====================================================== */
 
 .cb-presence-cash__totals {
   margin-top: 16px;
@@ -527,7 +642,6 @@ html[data-compact="1"] .cb-presence__tab {
   color: #0f172a;
 }
 
-/* Total général */
 .cb-presence-cash__grand {
   grid-column: 1 / -1;
   background: radial-gradient(
@@ -538,11 +652,29 @@ html[data-compact="1"] .cb-presence__tab {
   border-color: rgba(99, 102, 241, 0.25);
 }
 
-.cb-presence-cash__grand strong {
-  font-size: 20px;
-}
+.cb-presence-cash__grand strong { font-size: 20px; }
 
-/* ---------- Hint ---------- */
+/* Sticky totals premium sur mobile */
+@media (max-width: 768px) {
+  .cb-presence-cash__totals {
+    position: sticky;
+    bottom: 88px; /* laisse la bottom nav respirer */
+    z-index: 20;
+    margin-top: 12px;
+  }
+
+  .cb-presence-cash__totals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
+  }
+
+  .cb-presence-cash__grand { grid-column: 1 / -1; }
+}
 
 .cb-presence-cash__hint {
   margin-top: 12px;
@@ -551,123 +683,407 @@ html[data-compact="1"] .cb-presence__tab {
   color: #64748b;
 }
 
-/* ---------- Responsive ---------- */
+/* ======================================================
+   12bis) ONGLET CAISSE — RAZ + Télécollecte (toujours en 2 colonnes)
+   ====================================================== */
 
-@media (max-width: 900px) {
-  /* Mobile: chaque ligne en colonne + libellés visibles */
-  .cb-presence-cash__row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 18px;
-  }
-
-  .cb-presence-cash__row--head {
-    display: none;
-  }
-
-  .cb-presence-cash__emp {
-    font-size: 15px;
-    padding-bottom: 8px;
-    margin-bottom: 2px;
-    border-bottom: 1px dashed rgba(148, 163, 184, 0.45);
-  }
-
-  /* Chaque champ affiche son libellé via data-label */
-  .cb-presence-cash__cell {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 10px;
-    border-radius: 14px;
-    background: rgba(248, 250, 252, 0.70);
-    border: 1px solid rgba(148, 163, 184, 0.26);
-  }
-
-  .cb-presence-cash__cell::before {
-    content: attr(data-label);
-    font-size: 12px;
-    font-weight: 900;
-    color: #64748b;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-  }
-
-  .cb-presence-cash__cell input {
-    width: 140px;
-    max-width: 55vw;
-  }
-
-  /* Total employé en bas, bien lisible */
-  .cb-presence-cash__total {
-    width: 100%;
-    justify-self: stretch;
-    text-align: right;
-    margin-top: 4px;
-  }
-
-  .cb-presence-cash__totals-grid {
-    grid-template-columns: 1fr;
-  }
+/* Conteneur des 2 champs (RAZ / Télécollecte) */
+.cb-presence-cash__checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
-/* ---------- Compact mode ---------- */
-
-html[data-compact="1"] .cb-presence-cash__row {
-  padding: 8px 10px;
+/* Chaque “carte” de contrôle */
+.cb-presence-cash__check {
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
-html[data-compact="1"] .cb-presence-cash__totals-grid > div {
-  padding: 10px;
-}
-/* ===== Caisse : inputs bien visibles ===== */
-
-.cb-presence-cash__row input {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 12px;
-  padding: 8px 10px;
-  font-size: 14px;
-  font-weight: 900;
-  color: #0f172a;
-  text-align: right;
-
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    background 140ms ease;
+/* Ligne label + statut */
+.cb-presence-cash__check-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-/* Focus clair : on voit ce qu’on remplit */
-.cb-presence-cash__row input:focus {
-  border-color: rgba(99, 102, 241, 0.6);
-  background: #ffffff;
-  box-shadow: 0 0 0 5px 
-  rgba(99, 102, 241, 0.18);
-}
-/* Champ rempli → feedback visuel */
-.cb-presence-cash__row input:not(:placeholder-shown) {
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.35);
-}
-/* Total employé */
-.cb-presence-cash__total {
-  background: rgba(99, 102, 241, 0.10);
-  border-radius: 999px;
-  padding: 6px 12px;
+.cb-presence-cash__check-label {
+  font-size: 12px;
   font-weight: 1000;
-  font-size: 14px;
-  text-align: right;
-  color: #1e3a8a;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* Badge OK / WARN */
+.cb-presence-cash__check-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 1000;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.cb-presence-cash__check-badge--ok {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.10);
+}
+
+.cb-presence-cash__check-badge--warn {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+}
+
+/* ✅ IMPORTANT : même sur mobile, on reste en 2 colonnes */
 @media (max-width: 768px) {
-  .cb-presence-cash__row input {
-    font-size: 15px;
-    padding: 10px 12px;
+  .cb-presence-cash__checks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .cb-presence-cash__total {
-    font-size: 15px;
+  .cb-presence-cash__check {
+    padding: 10px;
   }
+}
+
+/* Compact mode (caisse) */
+html[data-compact="1"] .cb-presence-cash__row { padding: 8px 10px; }
+html[data-compact="1"] .cb-presence-cash__totals-grid > div { padding: 10px; }
+
+/* ======================================================
+   13) VERROUILLAGE (pill) + TOGGLE CAISSE (onglet Présence)
+   ====================================================== */
+
+.cb-presence__lock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 12px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+}
+
+.cb-presence__cash-toggle {
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  width: fit-content;
+}
+
+.cb-presence__cash-toggle--on {
+  border-color: rgba(34, 197, 94, 0.28);
+  background: rgba(34, 197, 94, 0.10);
+}
+
+/* ======================================================
+   PDF / PRINT — Feuille compacte (Récap)
+   ====================================================== */
+
+/* La zone imprimable (visible écran + print) */
+.cb-presence-print {
+  margin-top: 14px;
+}
+
+/* La “feuille” */
+.cb-presence-print__sheet {
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+/* Header */
+.cb-presence-print__sheet-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.cb-presence-print__sheet-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 1000;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.cb-presence-print__sheet-date {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  white-space: nowrap;
+}
+
+/* KPIs (2 colonnes) */
+.cb-presence-print__sheet-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cb-presence-print__sheet-kpi {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(248, 250, 252, 0.6);
+}
+
+.cb-presence-print__kpi-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+.cb-presence-print__kpi-line:last-child {
+  border-bottom: 0;
+}
+
+.cb-presence-print__kpi-line span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #334155;
+}
+
+.cb-presence-print__kpi-line strong {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #0f172a;
+}
+
+/* Dépenses */
+.cb-presence-print__sheet-expenses {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.cb-presence-print__sheet-box-title {
+  font-size: 12px;
+  font-weight: 1000;
+  color: #0f172a;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.cb-presence-print__sheet-empty {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.cb-presence-print__sheet-expenses-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cb-presence-print__expense-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.35);
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.cb-presence-print__expense-row strong {
+  font-weight: 1000;
+}
+
+.cb-presence-print__expense-row:last-child {
+  border-bottom: 0;
+}
+
+.cb-presence-print__expense-row--total {
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+  border-bottom: 0;
+}
+
+/* Tableau employés */
+.cb-presence-print__sheet-table {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.cb-presence-print__grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cb-presence-print__grid th,
+.cb-presence-print__grid td {
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+  text-align: center; /* centre toutes les infos par défaut */
+  vertical-align: middle;
+}
+
+/* Option lisibilité : le nom reste à gauche, le reste centré */
+.cb-presence-print__grid th:first-child,
+.cb-presence-print__grid td:first-child {
+  text-align: left;
+}
+
+.cb-presence-print__grid thead th {
+  text-align: center;
+  font-weight: 1000;
+  color: #0f172a;
+  background: rgba(248, 250, 252, 0.9);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.45);
+  white-space: nowrap;
+}
+
+.cb-presence-print__grid tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Responsive écran (si tu veux garder lisible sur mobile) */
+@media (max-width: 768px) {
+  .cb-presence-print__sheet-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ======================================================
+   IMPRESSION : on imprime uniquement la feuille
+   ====================================================== */
+@media print {
+  /* reset page */
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  /* Cache tout par défaut */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Ne garder visible que la zone recap imprimable */
+  .cb-presence-print,
+  .cb-presence-print * {
+    visibility: visible !important;
+  }
+
+  /* Positionne la feuille en haut */
+  .cb-presence-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  /* Supprime ombres / arrondis trop “web” pour le print */
+  .cb-presence-print__sheet {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: 1px solid #000 !important;
+  }
+
+  .cb-presence-print__sheet-kpi,
+  .cb-presence-print__sheet-expenses,
+  .cb-presence-print__sheet-table {
+    border: 1px solid #000 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+  }
+
+  .cb-presence-print__grid thead th {
+    background: #fff !important;
+  }
+}
+
+.cb-presence-cash__banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+
+  margin-top: 10px;
+
+  .cb-presence-cash__banner-icon {
+    line-height: 1;
+    font-size: 16px;
+    margin-top: 1px;
+  }
+
+  .cb-presence-cash__banner-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .cb-presence-cash__banner-title {
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .cb-presence-cash__banner-sub {
+    font-size: 12px;
+    opacity: 0.8;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.cb-presence-cash__banner--ok {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.cb-presence-cash__banner--warn {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
 }

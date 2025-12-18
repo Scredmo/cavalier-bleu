@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // =====================================================
 // 🔹 TYPES + CONSTANTES (Présence)
@@ -41,7 +42,6 @@ type PresenceRecord = {
   start?: string;
   end?: string;
   note?: string;
-  ca?: number; // CA individuel (salle uniquement)
 };
 
 type PresenceState = {
@@ -85,8 +85,55 @@ const STORAGE_EXPENSES_KEY = "CB_EXPENSES_V1"; // (on intègre maintenant les d�
 
 // Caisse (service) + extras de la journée
 const STORAGE_CASH_KEY = "CB_CASH_V1";
+const STORAGE_CASH_INCLUDE_KEY = "CB_CASH_INCLUDE_V1";
 const STORAGE_PRESENCE_EXTRAS_KEY = "CB_PRESENCE_EXTRAS_V1";
 const STORAGE_PRESENCE_ADDITIONS_KEY = "CB_PRESENCE_ADDITIONS_V1";
+const STORAGE_PRESENCE_LOCKS_KEY = "CB_PRESENCE_LOCKS_V1";
+const STORAGE_TELECOLLECT_KEY = "CB_TELECOLLECT_V1"; // RAZ + télécollectes CB (par date)
+const STORAGE_DAILY_SHEETS_KEY = "CB_DAILY_SHEETS_V1";
+const STORAGE_PRESENCE_UI_KEY = "CB_PRESENCE_UI_V1";
+
+type PresenceUIState = {
+  date: string;
+  activeTab: "presence" | "caisse" | "depenses" | "recap";
+};
+
+type DailySheetRow = {
+  id: string;
+  name: string;
+  role: Role;
+  present: boolean;
+  start?: string;
+  end?: string;
+  hours: number;
+  cash?: { cb?: number; tr?: number; amex?: number; especes?: number };
+};
+
+type DailySheet = {
+  date: string;
+  createdAt: string;
+  telecollect?: { raz?: number; cb?: number };
+  totals: { cb: number; tr: number; amex: number; especes: number; grand: number; serviceCbApex: number; barCbApex: number };
+  expenses: ExpenseItem[];
+  rows: DailySheetRow[];
+};
+
+type DailySheetsState = { [date: string]: DailySheet };
+
+type LocksState = {
+  // date => true
+  [date: string]: true;
+};
+
+type TelecollectRecord = {
+  raz?: number; // CA total journalier issu du RAZ
+  cb?: number;  // Total télécollectes CB (CB + AMEX)
+};
+
+type TelecollectState = {
+  // date => record
+  [date: string]: TelecollectRecord;
+};
 
 type PresenceAddition = {
   date: string; // YYYY-MM-DD
@@ -104,6 +151,10 @@ type CashRecord = {
 type CashState = {
   // `${date}::${employeeId}`
   [key: string]: CashRecord;
+};
+type CashIncludeState = {
+  // `${date}::${employeeId}` => true (inclus) / false (exclu)
+  [key: string]: boolean;
 };
 
 type PresenceExtra = {
@@ -125,18 +176,24 @@ function todayISO(): string {
 
 function parseHours(start?: string, end?: string): number {
   if (!start || !end) return 0;
+
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
+
   if (
-    Number.isNaN(sh) ||
-    Number.isNaN(sm) ||
-    Number.isNaN(eh) ||
-    Number.isNaN(em)
-  )
-    return 0;
+    Number.isNaN(sh) || Number.isNaN(sm) ||
+    Number.isNaN(eh) || Number.isNaN(em)
+  ) return 0;
+
   const startMin = sh * 60 + sm;
-  const endMin = eh * 60 + em;
-  if (endMin <= startMin) return 0;
+  let endMin = eh * 60 + em;
+
+  // ✅ Si l’heure de fin est “avant” l’heure de début,
+  // on considère que ça passe après minuit (+24h).
+  if (endMin <= startMin) {
+    endMin += 24 * 60;
+  }
+
   return (endMin - startMin) / 60;
 }
 
@@ -201,17 +258,135 @@ function dateToDayKey(date: string): DayKey {
 // =====================================================
 
 export default function PresencePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [date, setDate] = useState<string>(todayISO());
   const [presence, setPresence] = useState<PresenceState>({});
   const [planning, setPlanning] = useState<PlanningState>({});
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
-
-  // Onglets
+  const [locks, setLocks] = useState<LocksState>({});
+  const isLocked = !!locks[date];
+  const [telecollect, setTelecollect] = useState<TelecollectState>({});
+  const [dailySheets, setDailySheets] = useState<DailySheetsState>({});
   const [activeTab, setActiveTab] = useState<"presence" | "caisse" | "depenses" | "recap">("presence");
+
+  // ✅ Empêche l'écrasement du LocalStorage au 1er render (reset lors du changement de page)
+  const didSaveUIRef = useRef(false);
+  const didSaveDailySheetsRef = useRef(false);
+  const didSaveTelecollectRef = useRef(false);
+  const didSaveCashRef = useRef(false);
+  const didSaveCashIncludeRef = useRef(false);
+  const didSaveExtrasRef = useRef(false);
+  const didSaveExpensesRef = useRef(false);
+  const didSaveAdditionsRef = useRef(false);
+  const didSaveLocksRef = useRef(false);
+  const didSavePresenceRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // ✅ 1) Priorité à l'URL (dashboard -> présence)
+    try {
+      const urlDate = searchParams?.get("date") ?? "";
+      const urlTab = (searchParams?.get("tab") ?? "") as PresenceUIState["activeTab"] | "";
+
+      const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(urlDate);
+      const isValidTab = urlTab === "presence" || urlTab === "caisse" || urlTab === "depenses" || urlTab === "recap";
+
+      if (isValidDate) setDate(urlDate);
+      if (isValidTab) setActiveTab(urlTab);
+
+      // Si l'URL est complète, on ne charge pas le LS (sinon il écrase)
+      if (isValidDate || isValidTab) return;
+    } catch (e) {
+      console.error("Erreur lecture URL (présence)", e);
+    }
+
+    // ✅ 2) Fallback: LocalStorage
+    try {
+      const raw = window.localStorage.getItem(STORAGE_PRESENCE_UI_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<PresenceUIState>;
+
+      if (typeof parsed.date === "string" && parsed.date) setDate(parsed.date);
+
+      if (
+        parsed.activeTab === "presence" ||
+        parsed.activeTab === "caisse" ||
+        parsed.activeTab === "depenses" ||
+        parsed.activeTab === "recap"
+      ) {
+        setActiveTab(parsed.activeTab);
+      }
+    } catch (e) {
+      console.error("Erreur chargement UI présence", e);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Skip 1st run: sinon on écrase la UI persistée par défaut (reset)
+    if (!didSaveUIRef.current) {
+      didSaveUIRef.current = true;
+      return;
+    }
+
+    const payload: PresenceUIState = { date, activeTab };
+    window.localStorage.setItem(STORAGE_PRESENCE_UI_KEY, JSON.stringify(payload));
+
+    // ✅ Sync URL (évite le bug "ça ouvre la dernière date")
+    const basePath = window.location.pathname || "/presence";
+    const nextUrl = `${basePath}?date=${encodeURIComponent(date)}&tab=${encodeURIComponent(activeTab)}`;
+    router.replace(nextUrl, { scroll: false });
+  }, [date, activeTab, router]);
+
+  useEffect(() => {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_DAILY_SHEETS_KEY);
+    if (raw) setDailySheets(JSON.parse(raw));
+  } catch {}
+}, []);
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  if (!didSaveDailySheetsRef.current) {
+    didSaveDailySheetsRef.current = true;
+    return;
+  }
+  window.localStorage.setItem(STORAGE_DAILY_SHEETS_KEY, JSON.stringify(dailySheets));
+}, [dailySheets]);
+
+  // Charger télécollectes (RAZ + total CB)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_TELECOLLECT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as TelecollectState;
+        if (parsed && typeof parsed === "object") setTelecollect(parsed);
+      }
+    } catch (err) {
+      console.error("Erreur chargement télécollectes", err);
+    }
+  }, []);
+
+  // Sauvegarde télécollectes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!didSaveTelecollectRef.current) {
+      didSaveTelecollectRef.current = true;
+      return;
+    }
+    window.localStorage.setItem(STORAGE_TELECOLLECT_KEY, JSON.stringify(telecollect));
+  }, [telecollect]);
 
   // Caisse (service)
   const [cash, setCash] = useState<CashState>({});
+  const [cashInclude, setCashInclude] = useState<CashIncludeState>({});
+
 
   // Extras du jour (ajout manuel)
   const [extras, setExtras] = useState<PresenceExtra[]>([]);
@@ -223,6 +398,209 @@ export default function PresencePage() {
   const [additions, setAdditions] = useState<PresenceAddition[]>([]);
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  // insert helper before return
+
+  const renderPresenceMiniTable = (list: Employee[], title: string) => {
+    if (list.length === 0) return null;
+    return (
+      <div style={{ marginTop: 16 }}>
+        <div className="cb-presence-cash__head" style={{ marginBottom: 10 }}>
+          <h3 className="cb-presence-cash__title" style={{ fontSize: 16 }}>
+            {title}
+          </h3>
+          <p className="cb-presence-cash__sub">Présents (sans ventilation de caisse).</p>
+        </div>
+
+        <div className="cb-presence-cash__table">
+          <div className="cb-presence-cash__row cb-presence-cash__row--head">
+            <div className="cb-presence-cash__cell">Employé</div>
+            <div className="cb-presence-cash__cell">Arrivée</div>
+            <div className="cb-presence-cash__cell">Départ</div>
+            <div className="cb-presence-cash__cell">Heures</div>
+          </div>
+
+          {list.map((emp) => {
+            const pres = getRecord(date, emp.id);
+            const hours =
+              pres.present && pres.start && pres.end
+                ? parseHours(pres.start, pres.end)
+                : 0;
+
+            return (
+              <div key={emp.id} className="cb-presence-cash__row">
+                <div className="cb-presence-cash__cell cb-presence-cash__emp" data-label="Employé">
+                  <span className="cb-presence-cash__emp-name">{emp.name}</span>
+                </div>
+
+                <div className="cb-presence-cash__cell" data-label="Arrivée">
+                  <span className="cb-presence__muted">{pres.start ?? "—"}</span>
+                </div>
+
+                <div className="cb-presence-cash__cell" data-label="Départ">
+                  <span className="cb-presence__muted">{pres.end ?? "—"}</span>
+                </div>
+
+                <div className="cb-presence-cash__cell" data-label="Heures">
+                  <span className="cb-presence-cash__total">
+                    {hours > 0 ? `${hours.toFixed(1)} h` : "—"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCashTable = (list: Employee[]) => {
+    return (
+      <div className="cb-presence-cash__table">
+        <div className="cb-presence-cash__row cb-presence-cash__row--head">
+          <div className="cb-presence-cash__cell">Employé</div>
+          <div className="cb-presence-cash__cell">CB</div>
+          <div className="cb-presence-cash__cell">TR</div>
+          <div className="cb-presence-cash__cell">AMEX</div>
+          <div className="cb-presence-cash__cell">Espèces</div>
+          <div className="cb-presence-cash__cell">Total</div>
+        </div>
+
+        {list.map((emp) => {
+          const rec = getCashRecord(date, emp.id);
+          const cb = rec.cb ?? 0;
+          const tr = rec.tr ?? 0;
+          const amex = rec.amex ?? 0;
+          const especes = rec.especes ?? 0;
+          const total = cb + tr + amex + especes;
+
+          const onChange = (k: PaymentKey, v: string) => {
+            const raw = v.replace(",", ".");
+            const num = Number(raw);
+            updateCashRecord(date, emp.id, (prev) => ({
+              ...prev,
+              [k]: Number.isNaN(num) ? undefined : num,
+            }));
+          };
+
+          return (
+            <div key={emp.id} className="cb-presence-cash__row">
+              <div
+                className="cb-presence-cash__cell cb-presence-cash__emp"
+                data-label="Employé"
+              >
+                <span className="cb-presence-cash__emp-name">{emp.name}</span>
+              </div>
+
+              <div className="cb-presence-cash__cell" data-label="CB">
+                <input
+                  type="number"
+                  className="cb-presence__input cb-presence__input--money"
+                  value={cb ? cb : ""}
+                  onChange={(e) => onChange("cb", e.target.value)}
+                  placeholder="0"
+                  inputMode="decimal"
+                  disabled={isLocked}
+                />
+              </div>
+
+              <div className="cb-presence-cash__cell" data-label="TR">
+                <input
+                  type="number"
+                  className="cb-presence__input cb-presence__input--money"
+                  value={tr ? tr : ""}
+                  onChange={(e) => onChange("tr", e.target.value)}
+                  placeholder="0"
+                  inputMode="decimal"
+                  disabled={isLocked}
+                />
+              </div>
+
+              <div className="cb-presence-cash__cell" data-label="AMEX">
+                <input
+                  type="number"
+                  className="cb-presence__input cb-presence__input--money"
+                  value={amex ? amex : ""}
+                  onChange={(e) => onChange("amex", e.target.value)}
+                  placeholder="0"
+                  inputMode="decimal"
+                  disabled={isLocked}
+                />
+              </div>
+
+              <div className="cb-presence-cash__cell" data-label="Espèces">
+                <input
+                  type="number"
+                  className="cb-presence__input cb-presence__input--money"
+                  value={especes ? especes : ""}
+                  onChange={(e) => onChange("especes", e.target.value)}
+                  placeholder="0"
+                  inputMode="decimal"
+                  disabled={isLocked}
+                />
+              </div>
+
+              <div
+                className="cb-presence-cash__cell cb-presence-cash__total"
+                data-label="Total"
+              >
+                <span className="cb-presence-cash__total-value">
+                  {total > 0
+                    ? total.toLocaleString("fr-FR", {
+                        style: "currency",
+                        currency: "EUR",
+                      })
+                    : "—"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+  const saveDailySheetSnapshot = () => {
+  const rows: DailySheetRow[] = displayedEmployees.map((emp) => {
+    const pres = getRecord(date, emp.id);
+    const hours = pres.present && pres.start && pres.end ? parseHours(pres.start, pres.end) : 0;
+
+    const isCashRole =
+      emp.role === "Patron" || emp.role === "Responsable" || emp.role === "Serveur" || emp.role === "Barman";
+
+    return {
+      id: emp.id,
+      name: emp.name,
+      role: emp.role,
+      present: !!pres.present,
+      start: pres.start,
+      end: pres.end,
+      hours,
+      cash: isCashRole ? getCashRecord(date, emp.id) : undefined,
+    };
+  });
+
+  const sheet: DailySheet = {
+    date,
+    createdAt: new Date().toISOString(),
+    telecollect: {
+      raz: typeof razValue === "number" ? razValue : undefined,
+      cb: typeof teleCbValue === "number" ? teleCbValue : undefined,
+    },
+    totals: {
+      cb: cashTotals.totalCB,
+      tr: cashTotals.totalTR,
+      amex: cashTotals.totalAMEX,
+      especes: cashTotals.totalESPECES,
+      grand: cashTotals.grand,
+      serviceCbApex: cashTotals.service.cb + cashTotals.service.amex,
+      barCbApex: cashTotals.bar.cb + cashTotals.bar.amex,
+    },
+    expenses: expensesForDay.slice(),
+    rows,
+  };
+
+  setDailySheets((prev) => ({ ...prev, [date]: sheet }));
+};
+
   // Charger caisse
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -240,8 +618,35 @@ export default function PresencePage() {
   // Sauvegarde caisse
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!didSaveCashRef.current) {
+      didSaveCashRef.current = true;
+      return;
+    }
     window.localStorage.setItem(STORAGE_CASH_KEY, JSON.stringify(cash));
   }, [cash]);
+  // Charger inclusion caisse
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_CASH_INCLUDE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as CashIncludeState;
+      if (parsed && typeof parsed === "object") setCashInclude(parsed);
+    }
+  } catch (err) {
+    console.error("Erreur chargement inclusion caisse", err);
+  }
+}, []);
+
+// Sauvegarde inclusion caisse
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  if (!didSaveCashIncludeRef.current) {
+    didSaveCashIncludeRef.current = true;
+    return;
+  }
+  window.localStorage.setItem(STORAGE_CASH_INCLUDE_KEY, JSON.stringify(cashInclude));
+}, [cashInclude]);
 
   // Charger extras
   useEffect(() => {
@@ -272,6 +677,10 @@ export default function PresencePage() {
   // Sauvegarde extras
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!didSaveExtrasRef.current) {
+      didSaveExtrasRef.current = true;
+      return;
+    }
     window.localStorage.setItem(
       STORAGE_PRESENCE_EXTRAS_KEY,
       JSON.stringify(extras)
@@ -280,15 +689,44 @@ export default function PresencePage() {
   // Sauvegarde dépenses
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!didSaveExpensesRef.current) {
+      didSaveExpensesRef.current = true;
+      return;
+    }
     window.localStorage.setItem(STORAGE_EXPENSES_KEY, JSON.stringify(expenses));
   }, [expenses]);
-  useEffect(() => {
+useEffect(() => {
   if (typeof window === "undefined") return;
+  if (!didSaveAdditionsRef.current) {
+    didSaveAdditionsRef.current = true;
+    return;
+  }
   window.localStorage.setItem(
     STORAGE_PRESENCE_ADDITIONS_KEY,
     JSON.stringify(additions)
   );
 }, [additions]);
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_PRESENCE_LOCKS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as LocksState;
+      if (parsed && typeof parsed === "object") setLocks(parsed);
+    }
+  } catch (err) {
+    console.error("Erreur chargement locks", err);
+  }
+}, []);
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  if (!didSaveLocksRef.current) {
+    didSaveLocksRef.current = true;
+    return;
+  }
+  window.localStorage.setItem(STORAGE_PRESENCE_LOCKS_KEY, JSON.stringify(locks));
+}, [locks]);
 
   // Charger les employés (connecté à la page Employés)
   useEffect(() => {
@@ -378,6 +816,10 @@ export default function PresencePage() {
   // Sauvegarde présences
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!didSavePresenceRef.current) {
+      didSavePresenceRef.current = true;
+      return;
+    }
     window.localStorage.setItem(STORAGE_PRESENCE_KEY, JSON.stringify(presence));
   }, [presence]);
 
@@ -433,6 +875,7 @@ export default function PresencePage() {
     employeeId: string,
     updater: (prev: CashRecord) => CashRecord
   ) => {
+    if (isLocked) return;
     const key = getCashKey(d, employeeId);
     setCash((prev) => {
       const current = prev[key] ?? {};
@@ -442,6 +885,37 @@ export default function PresencePage() {
       };
     });
   };
+  const getCashIncludeKey = (d: string, employeeId: string) => `${d}::${employeeId}`;
+
+const isIncludedInCash = useCallback(
+  (d: string, employeeId: string) => {
+    const key = getCashIncludeKey(d, employeeId);
+    // ✅ Par défaut: inclus
+    return cashInclude[key] !== false;
+  },
+  [cashInclude]
+);
+
+const toggleCashInclude = (d: string, employeeId: string) => {
+  if (isLocked) return;
+
+  const key = getCashIncludeKey(d, employeeId);
+  const currentlyIncluded = cashInclude[key] !== false;
+  const nextIncluded = !currentlyIncluded;
+
+  setCashInclude((prev) => ({ ...prev, [key]: nextIncluded }));
+
+  // Si on EXCLUT, on purge sa caisse pour éviter des totaux fantômes
+  if (!nextIncluded) {
+    const cashKey = getCashKey(d, employeeId);
+    setCash((prev) => {
+      if (!prev[cashKey]) return prev;
+      const next = { ...prev };
+      delete next[cashKey];
+      return next;
+    });
+  }
+};
 
   const dayKey = useMemo(() => dateToDayKey(date), [date]);
 
@@ -505,6 +979,9 @@ export default function PresencePage() {
     employeeId: string,
     updater: (prev: PresenceRecord) => PresenceRecord
   ) => {
+    // Sécurité: si la journée est verrouillée, on bloque toute modif
+    if (isLocked) return;
+
     const key = getPresenceKey(d, employeeId);
     setPresence((prev) => {
       const current = prev[key] ?? { present: false };
@@ -533,8 +1010,7 @@ export default function PresencePage() {
           (existing.present ||
             existing.start ||
             existing.end ||
-            (existing.note && existing.note.trim() !== "") ||
-            typeof existing.ca === "number")
+            (existing.note && existing.note.trim() !== ""))
         ) {
           continue;
         }
@@ -570,6 +1046,7 @@ export default function PresencePage() {
   }, [date, planning, plannedEmployees, displayedEmployees.length, dayKey]);
 
   const handleTogglePresent = (employeeId: string) => {
+    if (isLocked) return;
     updateRecord(date, employeeId, (prev) => ({
       ...prev,
       present: !prev.present,
@@ -581,6 +1058,7 @@ export default function PresencePage() {
     field: "start" | "end",
     value: string
   ) => {
+    if (isLocked) return;
     updateRecord(date, employeeId, (prev) => ({
       ...prev,
       [field]: value || undefined,
@@ -589,22 +1067,15 @@ export default function PresencePage() {
   };
 
   const handleNoteChange = (employeeId: string, value: string) => {
+    if (isLocked) return;
     updateRecord(date, employeeId, (prev) => ({
       ...prev,
       note: value || undefined,
     }));
   };
-
-  const handleCAChange = (employeeId: string, value: string) => {
-    const raw = value.replace(",", ".");
-    const num = Number(raw);
-    updateRecord(date, employeeId, (prev) => ({
-      ...prev,
-      ca: Number.isNaN(num) ? undefined : num,
-    }));
-  };
-
+  
   const handleResetDay = () => {
+    if (isLocked) return;
     if (!window.confirm("Effacer la feuille de présence de cette journée ?"))
       return;
 
@@ -648,74 +1119,98 @@ export default function PresencePage() {
     };
   }, [displayedEmployees, date, getRecord]);
 
-  // CA individuel → CA global (serveurs + bar)
-  const caByRole = useMemo(() => {
-    let caService = 0; // Patron + Responsable + Serveurs
-    let caBar = 0; // Barman
-
-    displayedEmployees.forEach((emp) => {
-      const rec = getRecord(date, emp.id);
-      if (typeof rec.ca !== "number" || rec.ca <= 0) return;
-
-      if (emp.role === "Barman") {
-        caBar += rec.ca;
-      } else if (
-        emp.role === "Patron" ||
-        emp.role === "Responsable" ||
-        emp.role === "Serveur"
-      ) {
-        caService += rec.ca;
-      }
-    });
-
-    return {
-      caService,
-      caBar,
-      caTotal: caService + caBar,
-    };
-  }, [displayedEmployees, date, getRecord]);
-
-  // Totaux caisse (CB/TR/AMEX/Espèces) pour les employés de service présents
+  // Totaux caisse (CB/TR/AMEX/Espèces)
+  // - Service = Patron/Responsable/Serveur présents
+  // - Bar = Barman présent
+  // - Grand total = Service + Bar
   const cashTotals = useMemo(() => {
     const servicePresent = displayedEmployees.filter((emp) => {
       const rec = getRecord(date, emp.id);
       const isService =
         emp.role === "Patron" || emp.role === "Responsable" || emp.role === "Serveur";
-      return isService && rec.present;
+      return isService && rec.present && isIncludedInCash(date, emp.id);
     });
 
-    const sum = (k: PaymentKey) =>
-      servicePresent.reduce((acc, emp) => {
+    const barPresent = displayedEmployees.filter((emp) => {
+      const rec = getRecord(date, emp.id);
+      return emp.role === "Barman" && rec.present && isIncludedInCash(date, emp.id);
+    });
+
+    const sumGroup = (group: Employee[], k: PaymentKey) =>
+      group.reduce((acc, emp) => {
         const r = getCashRecord(date, emp.id);
         return acc + (r[k] ?? 0);
       }, 0);
 
-    const totalCB = sum("cb");
-    const totalTR = sum("tr");
-    const totalAMEX = sum("amex");
-    const totalESPECES = sum("especes");
+    const sumAnyFilled = (group: Employee[]) =>
+      group.reduce((acc, emp) => {
+        const r = getCashRecord(date, emp.id);
+        const any =
+          typeof r.cb === "number" ||
+          typeof r.tr === "number" ||
+          typeof r.amex === "number" ||
+          typeof r.especes === "number";
+        return acc + (any ? 1 : 0);
+      }, 0);
+
+    // Service totals
+    const serviceCB = sumGroup(servicePresent, "cb");
+    const serviceTR = sumGroup(servicePresent, "tr");
+    const serviceAMEX = sumGroup(servicePresent, "amex");
+    const serviceESPECES = sumGroup(servicePresent, "especes");
+    const serviceGrand = serviceCB + serviceTR + serviceAMEX + serviceESPECES;
+    const serviceFilledRows = sumAnyFilled(servicePresent);
+
+    // Bar totals
+    const barCB = sumGroup(barPresent, "cb");
+    const barTR = sumGroup(barPresent, "tr");
+    const barAMEX = sumGroup(barPresent, "amex");
+    const barESPECES = sumGroup(barPresent, "especes");
+    const barGrand = barCB + barTR + barAMEX + barESPECES;
+    const barFilledRows = sumAnyFilled(barPresent);
+
+    // Combined totals
+    const totalCB = serviceCB + barCB;
+    const totalTR = serviceTR + barTR;
+    const totalAMEX = serviceAMEX + barAMEX;
+    const totalESPECES = serviceESPECES + barESPECES;
     const grand = totalCB + totalTR + totalAMEX + totalESPECES;
 
-    const filledRows = servicePresent.reduce((acc, emp) => {
-      const r = getCashRecord(date, emp.id);
-      const any =
-        typeof r.cb === "number" ||
-        typeof r.tr === "number" ||
-        typeof r.amex === "number" ||
-        typeof r.especes === "number";
-      return acc + (any ? 1 : 0);
-    }, 0);
-
     return {
+      // groups
+      servicePresent,
+      barPresent,
+
+      // counts
       servicePresentCount: servicePresent.length,
-      filledRows,
+      barPresentCount: barPresent.length,
+      serviceFilledRows,
+      barFilledRows,
+
+      // totals combined
       totalCB,
       totalTR,
       totalAMEX,
       totalESPECES,
       grand,
+
+      // totals per group (useful for UI)
+      service: {
+        cb: serviceCB,
+        tr: serviceTR,
+        amex: serviceAMEX,
+        especes: serviceESPECES,
+        grand: serviceGrand,
+      },
+      bar: {
+        cb: barCB,
+        tr: barTR,
+        amex: barAMEX,
+        especes: barESPECES,
+        grand: barGrand,
+      },
     };
-  }, [displayedEmployees, date, getRecord, getCashRecord]);
+  }, [displayedEmployees, date, getRecord, getCashRecord, isIncludedInCash]);
 
   // Dépenses du jour
   const expensesForDay = useMemo(
@@ -736,11 +1231,12 @@ export default function PresencePage() {
 
     const expensesCount = expensesForDay.length;
 
-    // Caisse complète si toutes les lignes service présentes ont au moins un champ saisi
+    // Caisse complète si toutes les lignes service + bar présentes ont au moins un champ saisi
+    const totalPresentCashRows = cashTotals.servicePresentCount + cashTotals.barPresentCount;
+    const totalFilledCashRows = cashTotals.serviceFilledRows + cashTotals.barFilledRows;
+
     const cashComplete =
-      cashTotals.servicePresentCount === 0
-        ? false
-        : cashTotals.filledRows >= cashTotals.servicePresentCount;
+      totalPresentCashRows === 0 ? false : totalFilledCashRows >= totalPresentCashRows;
 
     return {
       presentCount,
@@ -758,10 +1254,58 @@ export default function PresencePage() {
   );
 
   const chargesRate = 45; // % charges patronales
-  const salaryCost = totals.totalCost;
-  const realCost = salaryCost * (1 + chargesRate / 100);
+  const netRate = 0.78; // estimation net ≈ 78% du brut
+  const salaryCostBrut = totals.totalCost;
+  const salaryCostNet = salaryCostBrut * netRate;
+  const realCost = salaryCostBrut * (1 + chargesRate / 100);
+  // Ratio masse salariale: on le compare au total caisse (proxy CA)
+  const turnoverBase = cashTotals.grand;
   const masseSalarialePct =
-    caByRole.caTotal > 0 ? (realCost / caByRole.caTotal) * 100 : null;
+    turnoverBase > 0 ? (realCost / turnoverBase) * 100 : null;
+
+  const approxEqual = (a: number, b: number, eps = 0.01) => Math.abs(a - b) <= eps;
+
+  const teleForDay = telecollect[date] ?? {};
+  const razValue = typeof teleForDay.raz === "number" ? teleForDay.raz : undefined;
+  const teleCbValue = typeof teleForDay.cb === "number" ? teleForDay.cb : undefined;
+
+  // On compare le RAZ au total des caisses (proxy CA journalier)
+  const totalCaisses = cashTotals.grand;
+
+  // Télécollectes CB = CB + AMEX (on regroupe)
+  const totalCbFromCaisses = cashTotals.totalCB + cashTotals.totalAMEX;
+
+  const razOk = typeof razValue === "number" && approxEqual(razValue, totalCaisses);
+  const cbOk = typeof teleCbValue === "number" && approxEqual(teleCbValue, totalCbFromCaisses);
+
+  const canLockToday = razOk && cbOk;
+
+  const cashGateParts: string[] = [];
+  if (!razOk) {
+    if (typeof razValue !== "number") cashGateParts.push("RAZ manquant");
+    else cashGateParts.push(`RAZ écart ${ (razValue - totalCaisses).toFixed(2) } €`);
+  }
+  if (!cbOk) {
+    if (typeof teleCbValue !== "number") cashGateParts.push("Télécollecte CB manquante");
+    else cashGateParts.push(
+      `Télécollecte CB écart ${ (teleCbValue - totalCbFromCaisses).toFixed(2) } €`
+    );
+  }
+  const cashGateHint = cashGateParts.join(" · ");
+
+  const setTeleField = (field: keyof TelecollectRecord, raw: string) => {
+    if (isLocked) return;
+    const cleaned = raw.replace(",", ".").trim();
+    const num = cleaned === "" ? undefined : Number(cleaned);
+    setTelecollect((prev) => {
+      const current = prev[date] ?? {};
+      const nextForDay: TelecollectRecord = {
+        ...current,
+        [field]: num === undefined || Number.isNaN(num) ? undefined : num,
+      };
+      return { ...prev, [date]: nextForDay };
+    });
+  };
 
   const formattedDateLong = new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "full",
@@ -831,32 +1375,26 @@ export default function PresencePage() {
         </div>
         {/* HEADER */}
         <div className="cb-presence__header">
-          <div>
-            <h2 className="cb-presence__title">Feuille de présence</h2>
-            <p className="cb-presence__subtitle">
-              Suivi quotidien de l&apos;équipe
-            </p>
-          </div>
+          
           <div className="cb-presence__actions">
             <input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+              const next = e.target.value;
+              setDate(next);
+            }}
               className="cb-presence__input"
             />
             <button
               type="button"
               className="cb-button cb-button--ghost"
               onClick={handleResetDay}
+              disabled={isLocked}
+              aria-disabled={isLocked}
+              title={isLocked ? "Journée verrouillée" : undefined}
             >
               Réinitialiser
-            </button>
-            <button
-              type="button"
-              className="cb-button cb-button--secondary"
-              onClick={handleExportPdf}
-            >
-              Export PDF
             </button>
           </div>
         </div>
@@ -865,39 +1403,86 @@ export default function PresencePage() {
       {activeTab === "recap" && (
       <section className="cb-presence-section">
         <div className="cb-presence__panel">
-        <div className="cb-presence-summary__row">
-          <div>
-            <span className="cb-presence-summary__label">
-              CA Serveurs (Patron / Resp / Serv.)
-            </span>
-            <div className="cb-presence-summary__value">
-              {caByRole.caService.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
+          <div
+            className="cb-presence__actions"
+            style={{ justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}
+          >
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              {!isLocked ? (
+                <button
+                  type="button"
+                  className="cb-button cb-button--secondary"
+                  onClick={() => {
+                    // Bloque le verrouillage tant que ça ne match pas
+                    if (!canLockToday) {
+                      const parts: string[] = [];
+                      if (!razOk) {
+                        if (typeof razValue !== "number") {
+                          parts.push(`RAZ manquant (attendu ≈ ${totalCaisses.toFixed(2)} €)`);
+                        } else {
+                          const diff = razValue - totalCaisses;
+                          parts.push(
+                            `RAZ ≠ total caisses (écart ${diff.toFixed(2)} €)`
+                          );
+                        }
+                      }
+                      if (!cbOk) {
+                        if (typeof teleCbValue !== "number") {
+                          parts.push(`Télécollecte CB manquante (attendu ≈ ${totalCbFromCaisses.toFixed(2)} €)`);
+                        } else {
+                          const diff = teleCbValue - totalCbFromCaisses;
+                          parts.push(
+                            `Télécollecte CB ≠ (CB+AMEX) caisses (écart ${diff.toFixed(2)} €)`
+                          );
+                        }
+                      }
+                      window.alert(
+                        `Impossible de verrouiller :\n\n${parts.join("\n")}\n\n➡️ Vérifie le RAZ et la Télécollecte CB dans l’onglet “Caisse”.`
+                      );
+                      return;
+                    }
+
+                   if (!window.confirm("Verrouiller la journée ? (plus de modifications)")) return;
+                   saveDailySheetSnapshot();
+                   setLocks((prev) => ({ ...prev, [date]: true }));
+                  }}
+                >
+                  🔒 Verrouiller la journée
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="cb-button cb-button--ghost"
+                  onClick={() => {
+                    if (!window.confirm("Déverrouiller la journée ?")) return;
+                    setLocks((prev) => {
+                      const next = { ...prev };
+                      delete next[date];
+                      return next;
+                    });
+                  }}
+                >
+                  🔓 Déverrouiller
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="cb-button cb-button--secondary"
+                onClick={handleExportPdf}
+              >
+                📄 Export PDF
+              </button>
             </div>
           </div>
-          <div>
-            <span className="cb-presence-summary__label">CA Bar (Barman)</span>
-            <div className="cb-presence-summary__value">
-              {caByRole.caBar.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </div>
-          </div>
-          <div>
-            <span className="cb-presence-summary__label">
-              CA total journalier
-            </span>
-            <div className="cb-presence-summary__value">
-              {caByRole.caTotal.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </div>
-          </div>
-        </div>
+
+
+{isLocked && (
+  <p className="cb-presence__hint" style={{ marginTop: 10 }}>
+    ✅ Journée verrouillée : présence, caisse et dépenses ne sont plus modifiables.
+  </p>
+)}
 
         <div className="cb-presence-summary__row">
           <div>
@@ -946,10 +1531,10 @@ export default function PresencePage() {
           </div>
           <div>
             <span className="cb-presence-summary__label">
-              Coût salarial brut
+              Coût salarial net (estimé)
             </span>
             <div className="cb-presence-summary__value">
-              {salaryCost.toLocaleString("fr-FR", {
+              {salaryCostNet.toLocaleString("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               })}
@@ -971,7 +1556,7 @@ export default function PresencePage() {
         <div className="cb-presence-summary__row">
           <div>
             <span className="cb-presence-summary__label">
-              Masse salariale / CA
+              Masse salariale / Total caisse
             </span>
             <div className="cb-presence-summary__value">
               {masseSalarialePct !== null
@@ -993,9 +1578,8 @@ export default function PresencePage() {
         </div>
 
         <p className="cb-presence-summary__hint">
-          Planning pré-rempli automatiquement. Complète les présences, les CA
-          individuels et les dépenses journalières pour avoir une vision
-          complète de ta journée.
+          Planning pré-rempli automatiquement. Complète les présences, la caisse
+          et les dépenses journalières pour avoir une vision complète de ta journée.
         </p>
         </div>
       </section>
@@ -1014,7 +1598,6 @@ export default function PresencePage() {
                 <th>Arrivée</th>
                 <th>Départ</th>
                 <th>Heures</th>
-                <th>CA individuel</th>
                 <th>Note</th>
               </tr>
             </thead>
@@ -1025,8 +1608,6 @@ export default function PresencePage() {
                   rec.present && rec.start && rec.end
                     ? parseHours(rec.start, rec.end)
                     : 0;
-
-                const isCuisine = emp.role === "Cuisine";
 
                 return (
                   <tr key={emp.id} className="cb-presence__row">
@@ -1056,9 +1637,45 @@ export default function PresencePage() {
                           type="checkbox"
                           checked={rec.present}
                           onChange={() => handleTogglePresent(emp.id)}
+                          disabled={isLocked}
                         />
                         <span />
                       </label>
+
+                      {(() => {
+                        const cashEligible =
+                          emp.role === "Patron" ||
+                          emp.role === "Responsable" ||
+                          emp.role === "Serveur" ||
+                          emp.role === "Barman";
+                        if (!cashEligible) return null;
+
+                        const included = isIncludedInCash(date, emp.id);
+
+                        return (
+                          <button
+                            type="button"
+                            className={
+                              "cb-presence__cash-toggle" +
+                              (included ? " cb-presence__cash-toggle--on" : "")
+                            }
+                            onClick={() => toggleCashInclude(date, emp.id)}
+                            disabled={isLocked || !rec.present}
+                            aria-disabled={isLocked || !rec.present}
+                            title={
+                              isLocked
+                                ? "Journée verrouillée"
+                                : !rec.present
+                                ? "Active 'Présent' pour gérer la caisse"
+                                : included
+                                ? "Retirer de la caisse"
+                                : "Ajouter à la caisse"
+                            }
+                          >
+                            {included ? "✓ En caisse" : "+ Mettre en caisse"}
+                          </button>
+                        );
+                      })()}
                     </td>
 
                     {/* Arrivée */}
@@ -1071,6 +1688,7 @@ export default function PresencePage() {
                           handleTimeChange(emp.id, "start", e.target.value)
                         }
                         className="cb-presence__input cb-presence__input--time"
+                        disabled={isLocked}
                       />
                     </td>
 
@@ -1084,6 +1702,7 @@ export default function PresencePage() {
                           handleTimeChange(emp.id, "end", e.target.value)
                         }
                         className="cb-presence__input cb-presence__input--time"
+                        disabled={isLocked}
                       />
                     </td>
 
@@ -1093,30 +1712,6 @@ export default function PresencePage() {
                       <span className="cb-presence__hours-value">
                         {hours > 0 ? `${hours.toFixed(1)} h` : "—"}
                       </span>
-                    </td>
-
-                    {/* CA individuel */}
-                    <td className="cb-presence__cell cb-presence__cell--ca">
-                      <span className="cb-presence__cell-label">
-                        CA individuel
-                      </span>
-                      {isCuisine ? (
-                        <span className="cb-presence__ca-disabled">—</span>
-                      ) : (
-                        <input
-                          type="number"
-                          className="cb-presence__input cb-presence__input--money"
-                          value={
-                            typeof rec.ca === "number" && rec.ca > 0
-                              ? rec.ca
-                              : ""
-                          }
-                          onChange={(e) =>
-                            handleCAChange(emp.id, e.target.value)
-                          }
-                          placeholder="0,00"
-                        />
-                      )}
                     </td>
 
                     {/* Note */}
@@ -1130,6 +1725,7 @@ export default function PresencePage() {
                         }
                         placeholder="Retard, pause, remarque..."
                         className="cb-presence__input"
+                        disabled={isLocked}
                       />
                     </td>
                   </tr>
@@ -1144,6 +1740,9 @@ export default function PresencePage() {
             type="button"
             className="cb-button cb-button--ghost"
             onClick={() => setIsAddEmployeeOpen(true)}
+            disabled={isLocked}
+            aria-disabled={isLocked}
+            title={isLocked ? "Journée verrouillée" : undefined}
           >
             + Ajouter un employé existant
           </button>
@@ -1151,6 +1750,9 @@ export default function PresencePage() {
             type="button"
             className="cb-button cb-button--secondary"
             onClick={() => setIsExtraOpen(true)}
+            disabled={isLocked}
+            aria-disabled={isLocked}
+            title={isLocked ? "Journée verrouillée" : undefined}
           >
             + Ajouter un extra
           </button>
@@ -1232,6 +1834,7 @@ export default function PresencePage() {
                     setExtraRole("Serveur");
                     setExtraRate("");
                   }}
+                  disabled={isLocked}
                 >
                   Ajouter
                 </button>
@@ -1286,6 +1889,7 @@ export default function PresencePage() {
                     setIsAddEmployeeOpen(false);
                     setSelectedEmployeeId("");
                   }}
+                  disabled={isLocked}
                 >
                   Ajouter
                 </button>
@@ -1302,179 +1906,190 @@ export default function PresencePage() {
         <section className="cb-presence-section">
           <div className="cb-presence__panel">
           <div className="cb-presence-cash__head">
-            <h2 className="cb-presence-cash__title">Feuille de caisse (service)</h2>
-            <p className="cb-presence-cash__sub">
-              Uniquement les employés de service présents. Saisis CB / TR / AMEX / Espèces.
-            </p>
+            <h2 className="cb-presence-cash__title">Feuille de caisse</h2>
           </div>
-
-          <div className="cb-presence-cash__table">
-            <div className="cb-presence-cash__row cb-presence-cash__row--head">
-              <div className="cb-presence-cash__cell">Employé</div>
-              <div className="cb-presence-cash__cell">CB</div>
-              <div className="cb-presence-cash__cell">TR</div>
-              <div className="cb-presence-cash__cell">AMEX</div>
-              <div className="cb-presence-cash__cell">Espèces</div>
-              <div className="cb-presence-cash__cell">Total</div>
+          <div
+            className={
+              "cb-presence-cash__banner " +
+              (canLockToday ? "cb-presence-cash__banner--ok" : "cb-presence-cash__banner--warn")
+            }
+            role="status"
+            aria-live="polite"
+            title={!canLockToday && cashGateHint ? cashGateHint : undefined}
+          >
+            <span className="cb-presence-cash__banner-icon" aria-hidden>
+              {canLockToday ? "✅" : "⚠️"}
+            </span>
+            <div className="cb-presence-cash__banner-body">
+              <strong className="cb-presence-cash__banner-title">
+                {canLockToday
+                  ? "OK — tu peux verrouiller la journée"
+                  : "Écarts à corriger avant verrouillage"}
+              </strong>
+              {!canLockToday && cashGateHint ? (
+                <span className="cb-presence-cash__banner-sub">{cashGateHint}</span>
+              ) : null}
+            </div>
+          </div>
+          {/* RAZ + Télécollectes (validation avant verrouillage) */}
+          <div className="cb-presence-cash__checks">
+            <div className="cb-presence-cash__check">
+              <span className="cb-presence__hint">RAZ (CA jour)</span>
+              <div className="cb-presence-cash__check-row">
+                <input
+                  type="number"
+                  className="cb-presence__input cb-presence__input--money"
+                  placeholder="RAZ"
+                  value={typeof razValue === "number" ? String(razValue) : ""}
+                  onChange={(e) => setTeleField("raz", e.target.value)}
+                  disabled={isLocked}
+                />
+                <span
+                  className={
+                    "cb-presence__pill " +
+                    (razOk ? "cb-presence__pill--ok" : "cb-presence__pill--warn")
+                  }
+                  title={
+                    razOk
+                      ? "OK"
+                      : typeof razValue === "number"
+                      ? `Écart: ${(razValue - totalCaisses).toFixed(2)} €`
+                      : `À renseigner (attendu ≈ ${totalCaisses.toFixed(2)} €)`
+                  }
+                >
+                  {razOk ? "✓" : "!"}
+                </span>
+              </div>
             </div>
 
-            {displayedEmployees
-              .filter((emp) => {
-                const rec = getRecord(date, emp.id);
-                const isService =
-                  emp.role === "Patron" ||
-                  emp.role === "Responsable" ||
-                  emp.role === "Serveur";
-                return isService && rec.present;
-              })
-              .map((emp) => {
-                const rec = getCashRecord(date, emp.id);
-                const cb = rec.cb ?? 0;
-                const tr = rec.tr ?? 0;
-                const amex = rec.amex ?? 0;
-                const especes = rec.especes ?? 0;
-                const total = cb + tr + amex + especes;
-
-                const onChange = (k: PaymentKey, v: string) => {
-                  const raw = v.replace(",", ".");
-                  const num = Number(raw);
-                  updateCashRecord(date, emp.id, (prev) => ({
-                    ...prev,
-                    [k]: Number.isNaN(num) ? undefined : num,
-                  }));
-                };
-
-                return (
-                  <div key={emp.id} className="cb-presence-cash__row">
-                    <div className="cb-presence-cash__cell cb-presence-cash__emp" data-label="Employé">
-                      {emp.name}
-                    </div>
-                    <div className="cb-presence-cash__cell" data-label="CB">
-                      <input
-                        type="number"
-                        className="cb-presence__input cb-presence__input--money"
-                        value={cb ? cb : ""}
-                        onChange={(e) => onChange("cb", e.target.value)}
-                        placeholder="0"
-                        inputMode="decimal"
-                      />
-                    </div>
-                    <div className="cb-presence-cash__cell" data-label="TR">
-                      <input
-                        type="number"
-                        className="cb-presence__input cb-presence__input--money"
-                        value={tr ? tr : ""}
-                        onChange={(e) => onChange("tr", e.target.value)}
-                        placeholder="0"
-                        inputMode="decimal"
-                      />
-                    </div>
-                    <div className="cb-presence-cash__cell" data-label="AMEX">
-                      <input
-                        type="number"
-                        className="cb-presence__input cb-presence__input--money"
-                        value={amex ? amex : ""}
-                        onChange={(e) => onChange("amex", e.target.value)}
-                        placeholder="0"
-                        inputMode="decimal"
-                      />
-                    </div>
-                    <div className="cb-presence-cash__cell" data-label="Espèces">
-                      <input
-                        type="number"
-                        className="cb-presence__input cb-presence__input--money"
-                        value={especes ? especes : ""}
-                        onChange={(e) => onChange("especes", e.target.value)}
-                        placeholder="0"
-                        inputMode="decimal"
-                      />
-                    </div>
-                    <div className="cb-presence-cash__cell cb-presence-cash__total" data-label="Total">
-                      {total > 0
-                        ? total.toLocaleString("fr-FR", {
-                            style: "currency",
-                            currency: "EUR",
-                          })
-                        : "—"}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="cb-presence-cash__check">
+              <span className="cb-presence__hint">Télécollecte CB</span>
+              <div className="cb-presence-cash__check-row">
+                <input
+                  type="number"
+                  className="cb-presence__input cb-presence__input--money"
+                  placeholder="CB (CB+AMEX)"
+                  value={typeof teleCbValue === "number" ? String(teleCbValue) : ""}
+                  onChange={(e) => setTeleField("cb", e.target.value)}
+                  disabled={isLocked}
+                />
+                <span
+                  className={
+                    "cb-presence__pill " +
+                    (cbOk ? "cb-presence__pill--ok" : "cb-presence__pill--warn")
+                  }
+                  title={
+                    cbOk
+                      ? "OK"
+                      : typeof teleCbValue === "number"
+                      ? `Écart: ${(teleCbValue - totalCbFromCaisses).toFixed(2)} €`
+                      : `À renseigner (attendu ≈ ${totalCbFromCaisses.toFixed(2)} €)`
+                  }
+                >
+                  {cbOk ? "✓" : "!"}
+                </span>
+              </div>
+            </div>
           </div>
 
+          {renderCashTable(
+            displayedEmployees.filter((emp) => {
+              const rec = getRecord(date, emp.id);
+              const isService =
+                emp.role === "Patron" ||
+                emp.role === "Responsable" ||
+                emp.role === "Serveur";
+              return isService && rec.present && isIncludedInCash(date, emp.id);
+            })
+          )}
+
+          {/* BAR */}
+          {cashTotals.barPresent.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div className="cb-presence-cash__head" style={{ marginBottom: 10 }}>
+                <h3 className="cb-presence-cash__title" style={{ fontSize: 16 }}>
+                  Caisse Bar
+                </h3>
+                <p className="cb-presence-cash__sub">
+                  Uniquement les barmans présents.
+                </p>
+              </div>
+
+              {renderCashTable(cashTotals.barPresent)}
+            </div>
+          )}
+
+          {/* CUISINE (présence uniquement) */}
+          {renderPresenceMiniTable(
+            displayedEmployees.filter((emp) => {
+              const rec = getRecord(date, emp.id);
+              return emp.role === "Cuisine" && rec.present;
+            }),
+            "Présence Cuisine"
+          )}
+
+          {/* AUTRES (si jamais) */}
+          {renderPresenceMiniTable(
+            displayedEmployees.filter((emp) => {
+              const rec = getRecord(date, emp.id);
+              const isCashRole =
+                emp.role === "Patron" ||
+                emp.role === "Responsable" ||
+                emp.role === "Serveur" ||
+                emp.role === "Barman";
+              return !isCashRole && emp.role !== "Cuisine" && rec.present;
+            }),
+            "Autres présents"
+          )}
+
           <div className="cb-presence-cash__totals">
-            {(() => {
-              const servicePresent = displayedEmployees.filter((emp) => {
-                const rec = getRecord(date, emp.id);
-                const isService =
-                  emp.role === "Patron" ||
-                  emp.role === "Responsable" ||
-                  emp.role === "Serveur";
-                return isService && rec.present;
-              });
-
-              const sum = (k: PaymentKey) =>
-                servicePresent.reduce((acc, emp) => {
-                  const r = getCashRecord(date, emp.id);
-                  return acc + (r[k] ?? 0);
-                }, 0);
-
-              const totalCB = sum("cb");
-              const totalTR = sum("tr");
-              const totalAMEX = sum("amex");
-              const totalESPECES = sum("especes");
-              const grand = totalCB + totalTR + totalAMEX + totalESPECES;
-
-              return (
-                <div className="cb-presence-cash__totals-grid">
-                  <div>
-                    <span>CB</span>
-                    <strong>
-                      {totalCB.toLocaleString("fr-FR", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>TR</span>
-                    <strong>
-                      {totalTR.toLocaleString("fr-FR", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>AMEX</span>
-                    <strong>
-                      {totalAMEX.toLocaleString("fr-FR", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Espèces</span>
-                    <strong>
-                      {totalESPECES.toLocaleString("fr-FR", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}
-                    </strong>
-                  </div>
-                  <div className="cb-presence-cash__grand">
-                    <span>Total caisse</span>
-                    <strong>
-                      {grand.toLocaleString("fr-FR", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}
-                    </strong>
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="cb-presence-cash__totals-grid">
+              <div>
+                <span>CB</span>
+                <strong>
+                  {cashTotals.totalCB.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </strong>
+              </div>
+              <div>
+                <span>TR</span>
+                <strong>
+                  {cashTotals.totalTR.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </strong>
+              </div>
+              <div>
+                <span>AMEX</span>
+                <strong>
+                  {cashTotals.totalAMEX.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </strong>
+              </div>
+              <div>
+                <span>Espèces</span>
+                <strong>
+                  {cashTotals.totalESPECES.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </strong>
+              </div>
+              <div className="cb-presence-cash__grand">
+                <span>Total caisse (Service + Bar)</span>
+                <strong>
+                  {cashTotals.grand.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </strong>
+              </div>
+            </div>
           </div>
 
           <p className="cb-presence-cash__hint">
@@ -1499,171 +2114,303 @@ export default function PresencePage() {
               date={date}
               expenses={expenses}
               setExpenses={setExpenses}
+              disabled={isLocked}
             />
           </div>
         </section>
       )}
 
-      {/* VERSION PDF / IMPRESSION */}
+      {/* VERSION PDF / IMPRESSION (format “feuille” compacte) */}
       {activeTab === "recap" && (
-      <section className="cb-presence-print">
-        <h1>Feuille de présences</h1>
-        <p className="cb-presence-print__subtitle">
-          Journée de travail · Responsable / Patron
-        </p>
-        <p className="cb-presence-print__subtitle">
-          Date : {formattedDateLong}
-        </p>
-
-        <div className="cb-presence-print__block">
-          <div className="cb-presence-print__row">
-            <span>CA Serveurs (Patron / Resp / Serv.)</span>
-            <strong>
-              {caByRole.caService.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </strong>
-          </div>
-          <div className="cb-presence-print__row">
-            <span>CA Bar (Barman)</span>
-            <strong>
-              {caByRole.caBar.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </strong>
-          </div>
-          <div className="cb-presence-print__row cb-presence-print__row--total">
-            <span>CA total journalier</span>
-            <strong>
-              {caByRole.caTotal.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </strong>
-          </div>
-        </div>
-
-        <div className="cb-presence-print__block">
-          <div className="cb-presence-print__row">
-            <span>Heures totales payées (jour)</span>
-            <strong>{totals.totalHours.toFixed(1)} h</strong>
-          </div>
-          <div className="cb-presence-print__row">
-            <span>Coût salarial (brut horaire)</span>
-            <strong>
-              {salaryCost.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </strong>
-          </div>
-          <div className="cb-presence-print__row">
-            <span>Coût réel avec charges (~{chargesRate}%)</span>
-            <strong>
-              {realCost.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </strong>
-          </div>
-          {masseSalarialePct !== null && (
-            <div className="cb-presence-print__row cb-presence-print__row--note">
-              <span>
-                Masse salariale ≈ {masseSalarialePct.toFixed(1)}% du CA
-              </span>
+        <section className="cb-presence-print">
+          <div className="cb-presence-print__sheet">
+            <div className="cb-presence-print__sheet-head">
+              <h1 className="cb-presence-print__sheet-title">Feuille de caisse</h1>
+              <div className="cb-presence-print__sheet-date">Date : {formattedDateLong}</div>
             </div>
-          )}
-        </div>
 
-        <div className="cb-presence-print__block">
-          <h2>Détail par employé</h2>
-          <div className="cb-presence__table-wrap cb-presence-print__table-wrap">
-            <table className="cb-presence__table cb-presence-print__table">
-              <thead>
-                <tr>
-                  <th>Nom</th>
-                  <th>Rôle</th>
-                  <th>Arrivée</th>
-                  <th>Départ</th>
-                  <th>Heures payées</th>
-                  <th>CA individuel</th>
-                  <th>Coût</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedEmployees.map((emp) => {
-                  const rec = getRecord(date, emp.id);
-                  const hours =
-                    rec.present && rec.start && rec.end
-                      ? parseHours(rec.start, rec.end)
-                      : 0;
-                  const cost = hours * (emp.hourlyRate ?? 0);
-
-                  return (
-                    <tr key={emp.id}>
-                      <td>{emp.name}</td>
-                      <td>{emp.role}</td>
-                      <td>{rec.start ?? ""}</td>
-                      <td>{rec.end ?? ""}</td>
-                      <td>{hours > 0 ? `${hours.toFixed(1)} h` : ""}</td>
-                      <td>
-                        {rec.ca && rec.ca > 0
-                          ? rec.ca.toLocaleString("fr-FR", {
-                              style: "currency",
-                              currency: "EUR",
-                            })
-                          : ""}
-                      </td>
-                      <td>
-                        {cost > 0
-                          ? cost.toLocaleString("fr-FR", {
-                              style: "currency",
-                              currency: "EUR",
-                            })
-                          : ""}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="cb-presence-print__block">
-          <h2>Dépenses journalières (extras service)</h2>
-          {expensesForDay.length === 0 ? (
-            <p>Aucune dépense saisie.</p>
-          ) : (
-            <table className="cb-presence-print__table">
-              <tbody>
-                {expensesForDay.map((exp) => (
-                  <tr key={exp.id}>
-                    <td>{exp.label}</td>
-                    <td style={{ textAlign: "right" }}>
-                      {exp.amount.toLocaleString("fr-FR", {
-                        style: "currency",
-                        currency: "EUR",
-                      })}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td style={{ fontWeight: 600 }}>Total dépenses</td>
-                  <td style={{ textAlign: "right", fontWeight: 600 }}>
-                    {totalExpenses.toLocaleString("fr-FR", {
+            <div className="cb-presence-print__sheet-kpis">
+              <div className="cb-presence-print__sheet-kpi">
+                <div className="cb-presence-print__kpi-line">
+                  <span>CB</span>
+                  <strong>
+                    {cashTotals.totalCB.toLocaleString("fr-FR", {
                       style: "currency",
                       currency: "EUR",
                     })}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
+                  </strong>
+                </div>
+                <div className="cb-presence-print__kpi-line">
+                  <span>TR</span>
+                  <strong>
+                    {cashTotals.totalTR.toLocaleString("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                    })}
+                  </strong>
+                </div>
+                <div className="cb-presence-print__kpi-line">
+                  <span>AMEX</span>
+                  <strong>
+                    {cashTotals.totalAMEX.toLocaleString("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                    })}
+                  </strong>
+                </div>
+                <div className="cb-presence-print__kpi-line">
+                  <span>Espèces</span>
+                  <strong>
+                    {cashTotals.totalESPECES.toLocaleString("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                    })}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="cb-presence-print__sheet-kpi">
+                <div className="cb-presence-print__kpi-line">
+                  <span>Total caisse</span>
+                  <strong>
+                    {cashTotals.grand.toLocaleString("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                    })}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="cb-presence-print__sheet-kpi">
+                <div className="cb-presence-print__kpi-line">
+                  <span>Télécollecte CB</span>
+                  <strong>
+                    {typeof teleCbValue === "number"
+                      ? teleCbValue.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })
+                      : "—"}
+                  </strong>
+                </div>
+                <div className="cb-presence-print__kpi-line">
+                  <span>CB+AMEX (total)</span>
+                  <strong>
+                    {totalCbFromCaisses.toLocaleString("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                    })}
+                  </strong>
+                </div>
+                <div className="cb-presence-print__kpi-line">
+                  <span>Écart</span>
+                  <strong>
+                    {typeof teleCbValue === "number"
+                      ? (teleCbValue - totalCbFromCaisses).toLocaleString("fr-FR", {
+                          style: "currency",
+                          currency: "EUR",
+                        })
+                      : "—"}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="cb-presence-print__sheet-expenses">
+              <div className="cb-presence-print__sheet-box-title">Dépenses</div>
+              {expensesForDay.length === 0 ? (
+                <div className="cb-presence-print__sheet-empty">Aucune dépense saisie.</div>
+              ) : (
+                <div className="cb-presence-print__sheet-expenses-list">
+                  {expensesForDay.map((exp) => (
+                    <div key={exp.id} className="cb-presence-print__expense-row">
+                      <span>{exp.label}</span>
+                      <strong>
+                        {exp.amount.toLocaleString("fr-FR", {
+                          style: "currency",
+                          currency: "EUR",
+                        })}
+                      </strong>
+                    </div>
+                  ))}
+                  <div className="cb-presence-print__expense-row cb-presence-print__expense-row--total">
+                    <span>Total dépenses</span>
+                    <strong>
+                      {totalExpenses.toLocaleString("fr-FR", {
+                        style: "currency",
+                        currency: "EUR",
+                      })}
+                    </strong>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="cb-presence-print__sheet-table">
+              <div className="cb-presence-print__sheet-box-title">Employés</div>
+              <table className="cb-presence-print__grid">
+                <thead>
+                  <tr>
+                    <th>Employé</th>
+                    <th>CB+AMEX</th>
+                    <th>TR</th>
+                    <th>Espèces</th>
+                    <th>Total</th>
+                    <th>Arrivée</th>
+                    <th>Départ</th>
+                    <th>Heures</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* SERVICE: ventilation règlements */}
+                  {cashTotals.servicePresent.map((emp) => {
+                    const pres = getRecord(date, emp.id);
+                    const hours =
+                      pres.present && pres.start && pres.end
+                        ? parseHours(pres.start, pres.end)
+                        : 0;
+
+                    const cashRec = getCashRecord(date, emp.id);
+                    const cbApex = (cashRec.cb ?? 0) + (cashRec.amex ?? 0);
+                    const tr = cashRec.tr ?? 0;
+                    const especes = cashRec.especes ?? 0;
+                    const total = cbApex + tr + especes;
+
+                    return (
+                      <tr key={emp.id}>
+                        <td>{emp.name}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {cbApex > 0
+                            ? cbApex.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {tr > 0
+                            ? tr.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {especes > 0
+                            ? especes.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {total > 0
+                            ? total.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td>{pres.start ?? ""}</td>
+                        <td>{pres.end ?? ""}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {hours > 0 ? `${hours.toFixed(1)} h` : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* BAR: ventilation règlements */}
+                  {cashTotals.barPresent.map((emp) => {
+                    const pres = getRecord(date, emp.id);
+                    const hours =
+                      pres.present && pres.start && pres.end
+                        ? parseHours(pres.start, pres.end)
+                        : 0;
+
+                    const cashRec = getCashRecord(date, emp.id);
+                    const cbApex = (cashRec.cb ?? 0) + (cashRec.amex ?? 0);
+                    const tr = cashRec.tr ?? 0;
+                    const especes = cashRec.especes ?? 0;
+                    const total = cbApex + tr + especes;
+
+                    return (
+                      <tr key={emp.id}>
+                        <td>{emp.name} (Bar)</td>
+                        <td style={{ textAlign: "right" }}>
+                          {cbApex > 0
+                            ? cbApex.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {tr > 0
+                            ? tr.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {especes > 0
+                            ? especes.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {total > 0
+                            ? total.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              })
+                            : ""}
+                        </td>
+                        <td>{pres.start ?? ""}</td>
+                        <td>{pres.end ?? ""}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {hours > 0 ? `${hours.toFixed(1)} h` : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* CUISINE & AUTRES: présence uniquement (montants vides) */}
+                  {displayedEmployees
+                    .filter((emp) => {
+                      const pres = getRecord(date, emp.id);
+                      const isAlreadyInCashTables =
+                        cashTotals.servicePresent.some((s) => s.id === emp.id) ||
+                        cashTotals.barPresent.some((b) => b.id === emp.id);
+                      return pres.present && !isAlreadyInCashTables;
+                    })
+                    .map((emp) => {
+                      const pres = getRecord(date, emp.id);
+                      const hours =
+                        pres.present && pres.start && pres.end
+                          ? parseHours(pres.start, pres.end)
+                          : 0;
+
+                      return (
+                        <tr key={emp.id}>
+                          <td>{emp.name}</td>
+                          <td />
+                          <td />
+                          <td />
+                          <td />
+                          <td>{pres.start ?? ""}</td>
+                          <td>{pres.end ?? ""}</td>
+                          <td style={{ textAlign: "right" }}>
+                            {hours > 0 ? `${hours.toFixed(1)} h` : ""}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       )}
       
       </div>
@@ -1676,10 +2423,12 @@ function PresenceExpensesEditor({
   date,
   expenses,
   setExpenses,
+  disabled,
 }: {
   date: string;
   expenses: ExpenseItem[];
   setExpenses: React.Dispatch<React.SetStateAction<ExpenseItem[]>>;
+  disabled: boolean;
 }) {
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
@@ -1695,6 +2444,7 @@ function PresenceExpensesEditor({
   );
 
   const add = () => {
+    if (disabled) return;
     const l = label.trim();
     if (!l) return;
     const raw = amount.replace(",", ".");
@@ -1715,6 +2465,7 @@ function PresenceExpensesEditor({
   };
 
   const remove = (id: string) => {
+    if (disabled) return;
     setExpenses((prev) => prev.filter((e) => e.id !== id));
   };
 
@@ -1727,6 +2478,7 @@ function PresenceExpensesEditor({
           onChange={(e) => setLabel(e.target.value)}
           placeholder="Ex : Course, Uber, Fournisseur..."
           className="cb-presence__input"
+          disabled={disabled}
         />
         <input
           type="number"
@@ -1734,8 +2486,14 @@ function PresenceExpensesEditor({
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
           className="cb-presence__input cb-presence__input--money"
+          disabled={disabled}
         />
-        <button type="button" className="cb-button cb-button--secondary" onClick={add}>
+        <button
+          type="button"
+          className="cb-button cb-button--secondary"
+          onClick={add}
+          disabled={disabled}
+        >
           Ajouter
         </button>
       </div>
@@ -1758,6 +2516,7 @@ function PresenceExpensesEditor({
                   type="button"
                   className="cb-button cb-button--ghost"
                   onClick={() => remove(e.id)}
+                  disabled={disabled}
                 >
                   Supprimer
                 </button>
@@ -1776,3 +2535,4 @@ function PresenceExpensesEditor({
     </div>
   );
 }
+  
