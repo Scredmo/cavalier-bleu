@@ -1,80 +1,106 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+"use client";
 
-// Routes that require auth
-const PROTECTED_PREFIXES = [
-  "/dashboard",
-  "/presence",
-  "/depenses",
-  "/employees",
-  "/planning",
-];
+import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
 
-function isProtectedPath(pathname: string) {
-  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
-}
+export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+  const nextPath = useMemo(() => {
+    const n = searchParams.get("next");
+    // Safety: avoid open-redirects
+    if (!n || !n.startsWith("/")) return "/dashboard";
+    return n;
+  }, [searchParams]);
 
-  // Always allow Next internals/static/assets
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/robots") ||
-    pathname.startsWith("/sitemap")
-  ) {
-    return NextResponse.next();
-  }
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Prepare a response that we can attach refreshed auth cookies to
-  let res = NextResponse.next({ request: { headers: req.headers } });
+  const supabase = useMemo(() => {
+    return createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }, []);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return req.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          // Update both the request cookies (for downstream) and the response cookies
-          cookiesToSet.forEach(({ name, value, options }) => req.cookies.set(name, value));
-          res = NextResponse.next({ request: { headers: req.headers } });
-          cookiesToSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
-        },
-      },
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // Session cookie is set; middleware will allow access
+      router.replace(nextPath);
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message ?? "Erreur de connexion");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  return (
+    <div style={{ maxWidth: 420, margin: "40px auto", padding: 16 }}>
+      <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900 }}>Connexion</h1>
+      <p style={{ marginTop: 8, color: "#64748b", fontWeight: 700 }}>
+        Connecte-toi avec ton email + mot de passe.
+      </p>
+
+      <form onSubmit={onSubmit} style={{ display: "grid", gap: 10, marginTop: 14 }}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+          autoComplete="email"
+          style={{ padding: 12, borderRadius: 12, border: "1px solid rgba(148,163,184,.45)" }}
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Mot de passe"
+          required
+          autoComplete="current-password"
+          style={{ padding: 12, borderRadius: 12, border: "1px solid rgba(148,163,184,.45)" }}
+        />
+
+        {error && (
+          <div style={{ color: "#b91c1c", fontWeight: 800, fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            padding: 12,
+            borderRadius: 12,
+            border: "1px solid rgba(99,102,241,.35)",
+            background: "rgba(99,102,241,.12)",
+            fontWeight: 900,
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
+        >
+          {loading ? "Connexion…" : "Se connecter"}
+        </button>
+      </form>
+    </div>
   );
-
-  // Refresh session if needed (and get current user)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // If user is not logged in and trying to access protected routes -> redirect to /login
-  if (!user && isProtectedPath(pathname)) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    // Optional: keep where the user wanted to go
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // If user is logged in and visits /login -> send to dashboard
-  if (user && pathname === "/login") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.searchParams.delete("next");
-    return NextResponse.redirect(url);
-  }
-
-  return res;
 }
-
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)",
-  ],
-};
