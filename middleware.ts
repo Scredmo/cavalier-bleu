@@ -5,6 +5,13 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
+  const redirectWithCookies = (pathname: string) => {
+    const url = req.nextUrl.clone();
+    url.pathname = pathname;
+    // IMPORTANT: preserve any Set-Cookie headers that Supabase may have set on `res`
+    return NextResponse.redirect(url, { headers: res.headers });
+  };
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -29,16 +36,12 @@ export async function middleware(req: NextRequest) {
 
   // Si pas connecté et route protégée => login
   if (!user && !isAuthRoute) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirectWithCookies("/login");
   }
 
   // Si connecté et va sur /login => dashboard
   if (user && isAuthRoute) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return redirectWithCookies("/dashboard");
   }
 
   return res;
