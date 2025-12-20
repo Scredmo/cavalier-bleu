@@ -8,7 +8,8 @@ import { useSearchParams } from "next/navigation";
 
 type TelecollectRecord = {
   raz?: number;
-  totalCb?: number; // CB + AMEX
+  totalCb?: number; // CB + AMEX (nouveau)
+  cb?: number; // legacy: certains écrans ont pu sauver "cb" au lieu de "totalCb"
 };
 
 type TelecollectState = {
@@ -37,6 +38,19 @@ type LocksState = {
 const STORAGE_CASH_KEY = "CB_CASH_V1";
 const STORAGE_PRESENCE_LOCKS_KEY = "CB_PRESENCE_LOCKS_V1";
 const STORAGE_DASHBOARD_UI_KEY = "CB_DASHBOARD_UI_V1";
+
+const STORAGE_EXPENSES_KEY = "CB_EXPENSES_V1";
+
+type ExpenseCategory = "extras_service" | "fournisseurs" | "energie" | "autre";
+
+type ExpenseItem = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  label: string;
+  amount: number;
+  // optional because old storage may not have it yet
+  category?: ExpenseCategory;
+};
 
 function getDayStatus(date: string, cashDates: Set<string>, lockedDates: Set<string>) {
   const hasCash = cashDates.has(date);
@@ -157,6 +171,7 @@ function DashboardPageInner() {
 
   const [cash, setCash] = useState<CashState>({});
   const [locks, setLocks] = useState<LocksState>({});
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const totalsByDate = useMemo(() => {
     const map: Record<
       string,
@@ -227,14 +242,55 @@ function DashboardPageInner() {
       console.error("Dashboard: erreur chargement UI", e);
     }
     try {
-  const rawTele = window.localStorage.getItem(STORAGE_TELECOLLECT_KEY);
-  if (rawTele) {
-    const parsed = JSON.parse(rawTele) as TelecollectState;
-    if (parsed && typeof parsed === "object") setTelecollect(parsed);
-  }
-} catch (e) {
-  console.error("Dashboard: erreur chargement telecollect", e);
-}
+      const rawTele = window.localStorage.getItem(STORAGE_TELECOLLECT_KEY);
+      if (rawTele) {
+        const parsed = JSON.parse(rawTele) as TelecollectState;
+        if (parsed && typeof parsed === "object") setTelecollect(parsed);
+      }
+    } catch (e) {
+      console.error("Dashboard: erreur chargement telecollect", e);
+    }
+
+    try {
+      const rawExpenses = window.localStorage.getItem(STORAGE_EXPENSES_KEY);
+      if (rawExpenses) {
+        const parsed = JSON.parse(rawExpenses) as ExpenseItem[] | { [date: string]: ExpenseItem[] };
+
+        // Support both shapes: flat array OR legacy object keyed by date
+        if (Array.isArray(parsed)) {
+          setExpenses(
+            parsed
+              .filter((e) => e && typeof (e as any).date === "string")
+              .map((e: any) => ({
+                id: String(e.id ?? crypto?.randomUUID?.() ?? `${e.date}-${e.label}`),
+                date: String(e.date),
+                label: String(e.label ?? ""),
+                amount: safeNum(e.amount),
+                category: (e.category as any) || undefined,
+              }))
+          );
+        } else if (parsed && typeof parsed === "object") {
+          const flat: ExpenseItem[] = [];
+          Object.keys(parsed).forEach((d) => {
+            const arr = (parsed as any)[d];
+            if (Array.isArray(arr)) {
+              arr.forEach((item: any) => {
+                flat.push({
+                  id: String(item.id ?? crypto?.randomUUID?.() ?? `${d}-${item.label}`),
+                  date: String(item.date ?? d),
+                  label: String(item.label ?? ""),
+                  amount: safeNum(item.amount),
+                  category: (item.category as any) || undefined,
+                });
+              });
+            }
+          });
+          setExpenses(flat);
+        }
+      }
+    } catch (e) {
+      console.error("Dashboard: erreur chargement expenses", e);
+    }
   }, []);
 
   // URL param override: /dashboard?date=YYYY-MM-DD
@@ -335,7 +391,6 @@ function DashboardPageInner() {
   };
 }, [cashDates, lockedDates, totalsByDate, telecollect]);
 
-  // --- Moved useMemo blocks here to ensure dependencies are initialized ---
   const lockedOkDatesInMonth = useMemo(() => {
     const mk = monthKey(monthCursor);
     const dates = new Set<string>();
@@ -494,22 +549,94 @@ function DashboardPageInner() {
         continue;
       }
 
-      if (st === "pending" || st === "error") {
+      if (st === "pending") {
         const { issues } = getIssuesForDate(d);
 
-        // If no issues, it means: cash exists, not locked, and checks are OK -> ready to lock.
+        // Only show "À verrouiller" days. If no issues => ready to lock.
         if (issues.length === 0) {
           toFix.push({ date: d, label: "Prêt à verrouiller", level: "warn" });
         } else {
+          // Show the most important issue directly so you know what's wrong from dashboard.
           const firstBad = issues.find((i) => i.level === "bad");
           const first = firstBad ?? issues[0];
           toFix.push({ date: d, label: first.text, level: first.level });
         }
       }
+      // We keep "error" status out of the dashboard alerts to avoid duplication.
     }
 
     return { toFix, okCount };
   }, [calendar.cells, cashDates, lockedDates, monthCursor, getIssuesForDate]);
+
+  const monthExpenses = useMemo(() => {
+    const mk = monthKey(monthCursor);
+
+    const inMonth = expenses.filter((e) => e?.date && monthKeyFromIso(e.date) === mk);
+
+    // Pour l’instant: on compte tout dans les dépenses globales.
+    // La catégorisation fine (extras service / fournisseurs / énergie...) sera faite plus tard dans la page Dépenses.
+    const normalizeCategory = (e: ExpenseItem): ExpenseCategory => {
+      const c = (e.category as any) as ExpenseCategory | undefined;
+      if (c === "extras_service" || c === "fournisseurs" || c === "energie" || c === "autre") return c;
+      return "autre";
+    };
+
+    let total = 0;
+
+    const byCategory: Record<ExpenseCategory, number> = {
+      extras_service: 0,
+      fournisseurs: 0,
+      energie: 0,
+      autre: 0,
+    };
+
+    const byDay: Record<string, number> = {};
+
+    for (const e of inMonth) {
+      const amt = safeNum(e.amount);
+      if (amt <= 0) continue;
+
+      total += amt;
+
+      const cat = normalizeCategory(e);
+      byCategory[cat] += amt;
+
+      if (e.date) byDay[e.date] = (byDay[e.date] ?? 0) + amt;
+    }
+
+    const topCats = (Object.entries(byCategory) as Array<[ExpenseCategory, number]>)
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const topDays = Object.entries(byDay)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([date, amount]) => ({ date, amount }));
+
+    return {
+      mk,
+      total: round2(total),
+      byCategory,
+      topCats,
+      topDays,
+      count: inMonth.length,
+    };
+  }, [expenses, monthCursor]);
+
+  const labelCat = (c: ExpenseCategory) => {
+    switch (c) {
+      case "extras_service":
+        return "Extras service";
+      case "fournisseurs":
+        return "Fournisseurs";
+      case "energie":
+        return "Énergie";
+      case "autre":
+      default:
+        return "Autre";
+    }
+  };
 
   const monthKpis = useMemo(() => {
     const mk = monthKey(monthCursor);
@@ -575,7 +702,7 @@ function DashboardPageInner() {
       const tc = telecollect?.[d];
       if (tc) {
         const raz = safeNum(tc.raz);
-        const tcb = safeNum(tc.totalCb);
+        const tcb = safeNum(tc.totalCb ?? (tc as any).cb);
         razAll += raz;
         teleCbAll += tcb;
         if (status === "ok") {
@@ -585,9 +712,39 @@ function DashboardPageInner() {
       }
     }
 
-    // Écarts mensuels (sur jours verrouillés uniquement)
-    const diffCbLocked = teleCbLocked - cbAndAmexLocked;
-    const diffRazLocked = razLocked - grandLocked;
+    // Écarts mensuels (sur jours verrouillés OK uniquement)
+    // Objectif: si toutes les journées verrouillées sont cohérentes, l'écart doit être 0.
+    // On additionne donc les écarts JOUR PAR JOUR (valeur absolue), plutôt qu'un delta global.
+    let diffCbLocked = 0;
+    let diffRazLocked = 0;
+
+    for (const d of dates) {
+      const status = getDayStatus(d, cashDates, lockedDates);
+      if (status !== "ok") continue;
+
+      const t = totalsByDate[d];
+      const tc = telecollect?.[d];
+      if (!t || !tc) continue;
+
+      const teleCb = safeNum((tc as any).totalCb ?? (tc as any).cb);
+      const raz = safeNum((tc as any).raz);
+
+      // CB gap: télécollecte (CB+AMEX) vs saisi (CB+AMEX)
+      if (teleCb > 0) {
+        const gap = round2(teleCb - safeNum(t.cbAndAmex));
+        if (Math.abs(gap) > 0.01) diffCbLocked += Math.abs(gap);
+      }
+
+      // RAZ gap: RAZ (CA journalier) vs total caisse
+      if (raz > 0) {
+        const gap = round2(raz - safeNum(t.grand));
+        if (Math.abs(gap) > 0.01) diffRazLocked += Math.abs(gap);
+      }
+    }
+
+    // arrondi final (pour affichage)
+    diffCbLocked = round2(diffCbLocked);
+    diffRazLocked = round2(diffRazLocked);
 
     return {
       mk,
@@ -876,16 +1033,7 @@ function DashboardPageInner() {
                 <h2 className="cb-dashboard__h2">Aperçu du {selectedDate}</h2>
                 <div className="cb-dashboard__pillrow">
                   <span className={"cb-pill" + (selectedStatus === "ok" ? " cb-pill--ok" : "")}>
-                    {selectedStatus === "empty"
-                      ? "Aucune caisse"
-                      : selectedStatus === "pending"
-                      ? "À verrouiller"
-                      : selectedStatus === "ok"
-                      ? "OK"
-                      : "Erreur"}
-                  </span>
-                  <span className={"cb-pill" + (selectedStatus === "ok" ? " cb-pill--ok" : "")}>
-                    {selectedStatus === "ok" ? "Verrouillée" : "Non verrouillée"}
+                    {selectedStatus === "ok" ? "OK" : "À verrouiller"}
                   </span>
                 </div>
               </div>
@@ -912,6 +1060,16 @@ function DashboardPageInner() {
                   <strong>{currencyEUR(selectedTotals.grand)}</strong>
                 </div>
               </div>
+
+              {selectedStatus !== "ok" && selectedHasCash && !selectedLocked && (() => {
+                const { issues } = getIssuesForDate(selectedDate);
+                const txt = issues.length === 0 ? "Prêt à verrouiller" : issues[0].text;
+                return (
+                  <p className="cb-dashboard__hint" style={{ marginTop: 10 }}>
+                    ⚠️ {txt}
+                  </p>
+                );
+              })()}
 
               {kpiFocus && (
                 <div style={{ marginTop: 12 }}>
@@ -1157,7 +1315,7 @@ function DashboardPageInner() {
                   <div className="cb-dashboard__alert-detail">
                     {monthAlerts.okCount === 0
                       ? "Aucune journée verrouillée ce mois-ci."
-                      : "✅ Journées verrouillées (caisse + contrôles OK)."}
+                      : "✅ Journées verrouillées."}
                   </div>
                   <div className="cb-dashboard__alert-actions">
                     <a className="cb-button cb-button--ghost" href={`/presence?date=${selectedDate}`}>
@@ -1167,17 +1325,124 @@ function DashboardPageInner() {
                 </div>
               </div>
 
-              <div className="cb-dashboard__footer-actions">
-                <button type="button" className="cb-button cb-button--ghost" onClick={() => { setKpiFocus(null); closePreview(); }}>
-                  Fermer
-                </button>
-              </div>
-            </aside>
+        <div className="cb-dashboard__footer-actions">
+          <button type="button" className="cb-button cb-button--ghost" onClick={() => { setKpiFocus(null); closePreview(); }}>
+            Fermer
+          </button>
+        </div>
+      </aside>
+    </div>
+  )}
+</section>
+
+{/* Dépenses mensuelles (Option B) */}
+<section className="cb-card" style={{ overflow: "hidden", width: "50%" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <h2 className="cb-dashboard__h2" style={{ margin: 0 }}>
+            Dépenses — {monthLabel}
+          </h2>
+          <button
+            type="button"
+            className="cb-button cb-button--ghost"
+            onClick={() => {
+              // future: page /depenses filtrée par mois
+              // for now we keep it simple: open depenses page
+              window.location.href = "/depenses";
+            }}
+          >
+            Ouvrir Dépenses
+          </button>
+        </div>
+
+        <div className="cb-dashboard__divider" />
+
+        <div className="cb-dashboard__stats" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+          <div className="cb-dashboard__stat cb-dashboard__stat--grand">
+            <span>Total dépenses (mois)</span>
+            <strong>{currencyEUR(monthExpenses.total)}</strong>
           </div>
-        )}
+        </div>
+
+        <div className="cb-dashboard__divider" />
+
+        <div style={{ display: "grid", gap: 10 }}>
+          <div style={{ fontWeight: 1000 }}>Répartition (top)</div>
+
+          {monthExpenses.topCats.length === 0 ? (
+            <div style={{ opacity: 0.85, fontWeight: 800 }}>Aucune dépense ce mois-ci.</div>
+          ) : (
+            <div style={{ display: "grid", gap: 8 }}>
+              {monthExpenses.topCats.map(([cat, amount]) => (
+                <div
+                  key={cat}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: 10,
+                    borderRadius: 14,
+                    background: "rgba(248,250,252,.7)",
+                    border: "1px solid rgba(148,163,184,.26)",
+                  }}
+                >
+                  <span style={{ fontWeight: 900 }}>{labelCat(cat)}</span>
+                  <span style={{ fontWeight: 1000 }}>{currencyEUR(round2(amount))}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {monthExpenses.topDays.length > 0 && (
+            <>
+              <div className="cb-dashboard__divider" style={{ margin: "12px 0" }} />
+              <div style={{ fontWeight: 1000 }}>Jours les + chers (top)</div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {monthExpenses.topDays.map((d) => (
+                  <button
+                    key={d.date}
+                    type="button"
+                    className="cb-button cb-button--ghost"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: 10,
+                      borderRadius: 14,
+                      border: "1px solid rgba(148,163,184,.26)",
+                      background: "rgba(248,250,252,.7)",
+                      fontWeight: 900,
+                    }}
+                    onClick={() => {
+                      // future: open depenses filtered to that date
+                      window.location.href = `/depenses?date=${d.date}`;
+                    }}
+                    title="Ouvrir les dépenses de ce jour"
+                  >
+                    <span>{d.date}</span>
+                    <span>{currencyEUR(round2(d.amount))}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          <p className="cb-dashboard__hint">
+            ✅ Pour l’instant, toutes les dépenses (y compris les extras service) sont comptées dans le total.
+            On fera la catégorisation plus tard dans la page Dépenses.
+          </p>
+        </div>
       </section>
-    </div> 
-    );
+    </div>
+  );
 }
 
 export default function DashboardPage() {

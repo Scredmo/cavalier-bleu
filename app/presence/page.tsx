@@ -171,7 +171,10 @@ type PresenceExtra = {
 
 function todayISO(): string {
   const d = new Date();
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function parseHours(start?: string, end?: string): number {
@@ -231,7 +234,8 @@ function roleSlug(role: Role): string {
 }
 
 function dateToDayKey(date: string): DayKey {
-  const d = new Date(date);
+  // ✅ Force local day interpretation (avoid UTC shifting YYYY-MM-DD)
+  const d = new Date(date + "T00:00:00");
   const day = d.getDay(); // 0 = dimanche
   switch (day) {
     case 0:
@@ -1309,7 +1313,7 @@ const toggleCashInclude = (d: string, employeeId: string) => {
 
   const formattedDateLong = new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "full",
-  }).format(new Date(date));
+  }).format(new Date(date + "T00:00:00"));
 
   return (
     <div className="cb-presence">
@@ -2350,14 +2354,14 @@ const toggleCashInclude = (d: string, employeeId: string) => {
                               })
                             : ""}
                         </td>
-                        <td style={{ textAlign: "right" }}>
-                          {especes > 0
-                            ? especes.toLocaleString("fr-FR", {
-                                style: "currency",
-                                currency: "EUR",
-                              })
-                            : ""}
-                        </td>
+            <td style={{ textAlign: "right" }}>
+              {especes > 0
+                ? especes.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })
+                : ""}
+            </td>
                         <td style={{ textAlign: "right" }}>
                           {total > 0
                             ? total.toLocaleString("fr-FR", {
@@ -2375,58 +2379,86 @@ const toggleCashInclude = (d: string, employeeId: string) => {
                     );
                   })}
 
-                  {/* CUISINE & AUTRES: présence uniquement (montants vides) */}
+                  {/* CUISINE */}
                   {displayedEmployees
-                    .filter((emp) => {
-                      const pres = getRecord(date, emp.id);
-                      const isAlreadyInCashTables =
-                        cashTotals.servicePresent.some((s) => s.id === emp.id) ||
-                        cashTotals.barPresent.some((b) => b.id === emp.id);
-                      return pres.present && !isAlreadyInCashTables;
-                    })
-                    .map((emp) => {
-                      const pres = getRecord(date, emp.id);
-                      const hours =
-                        pres.present && pres.start && pres.end
-                          ? parseHours(pres.start, pres.end)
-                          : 0;
-
-                      return (
-                        <tr key={emp.id}>
-                          <td>{emp.name}</td>
-                          <td />
-                          <td />
-                          <td />
-                          <td />
-                          <td>{pres.start ?? ""}</td>
-                          <td>{pres.end ?? ""}</td>
-                          <td style={{ textAlign: "right" }}>
-                            {hours > 0 ? `${hours.toFixed(1)} h` : ""}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    .filter((emp) => emp.role === "Cuisine" && getRecord(date, emp.id).present)
+                    .map((emp) => (
+                      <tr key={emp.id}>
+                        <td>{emp.name} (Cuisine)</td>
+                        <td colSpan={4}></td>
+                        <td>{getRecord(date, emp.id).start ?? ""}</td>
+                        <td>{getRecord(date, emp.id).end ?? ""}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {parseHours(
+                            getRecord(date, emp.id).start,
+                            getRecord(date, emp.id).end
+                          ) > 0
+                            ? `${parseHours(
+                                getRecord(date, emp.id).start,
+                                getRecord(date, emp.id).end
+                              ).toFixed(1)} h`
+                            : ""}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
+            </div>
+
+            <div className="cb-presence-print__sheet-summary">
+              <div className="cb-presence-print__summary-row">
+                <span>Heures totales</span>
+                <strong>{totals.totalHours.toFixed(1)} h</strong>
+              </div>
+              <div className="cb-presence-print__summary-row">
+                <span>Coût salarial net</span>
+                <strong>
+                  {salaryCostNet.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </strong>
+              </div>
+              <div className="cb-presence-print__summary-row">
+                <span>Coût réel + charges</span>
+                <strong>
+                  {realCost.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </strong>
+              </div>
+              {masseSalarialePct !== null && (
+                <div className="cb-presence-print__summary-row">
+                  <span>Masse salariale / CA</span>
+                  <strong>{masseSalarialePct.toFixed(1)} %</strong>
+                </div>
+              )}
             </div>
           </div>
         </section>
       )}
-      
       </div>
     </div>
   );
 }
 
+// =====================================================
+// 🔹 PAGE WRAPPER (avec Suspense)
+// =====================================================
+
 export default function PresencePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div>Chargement...</div>}>
       <PresencePageInner />
     </Suspense>
   );
 }
 
-// Helper composant pour l'édition des dépenses du jour
+// =====================================================
+// 🔹 ÉDITEUR DÉPENSES (composant séparé)
+// =====================================================
+
 function PresenceExpensesEditor({
   date,
   expenses,
@@ -2435,56 +2467,51 @@ function PresenceExpensesEditor({
 }: {
   date: string;
   expenses: ExpenseItem[];
-  setExpenses: React.Dispatch<React.SetStateAction<ExpenseItem[]>>;
+  setExpenses: (updater: (prev: ExpenseItem[]) => ExpenseItem[]) => void;
   disabled: boolean;
 }) {
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
 
-  const list = useMemo(
+  const expensesForDay = useMemo(
     () => expenses.filter((e) => e.date === date),
     [expenses, date]
   );
 
-  const total = useMemo(
-    () => list.reduce((s, e) => s + (e.amount || 0), 0),
-    [list]
-  );
-
-  const add = () => {
-    if (disabled) return;
+  const handleAddExpense = () => {
     const l = label.trim();
     if (!l) return;
-    const raw = amount.replace(",", ".");
-    const n = Number(raw);
-    if (Number.isNaN(n) || n <= 0) return;
+
+    const cleaned = amount.replace(",", ".");
+    const num = Number(cleaned);
+    if (Number.isNaN(num) || num <= 0) return;
 
     setExpenses((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: `${date}-${crypto.randomUUID()}`,
         date,
         label: l,
-        amount: n,
+        amount: num,
       },
     ]);
+
     setLabel("");
     setAmount("");
   };
 
-  const remove = (id: string) => {
-    if (disabled) return;
+  const handleRemoveExpense = (id: string) => {
     setExpenses((prev) => prev.filter((e) => e.id !== id));
   };
 
   return (
-    <div>
-      <div className="cb-presence__actions">
+    <div className="cb-presence-expenses">
+      <div className="cb-presence-expenses__form">
         <input
           type="text"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder="Ex : Course, Uber, Fournisseur..."
+          placeholder="Libellé"
           className="cb-presence__input"
           disabled={disabled}
         />
@@ -2492,55 +2519,48 @@ function PresenceExpensesEditor({
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
+          placeholder="0.00"
           className="cb-presence__input cb-presence__input--money"
+          inputMode="decimal"
           disabled={disabled}
         />
         <button
           type="button"
           className="cb-button cb-button--secondary"
-          onClick={add}
+          onClick={handleAddExpense}
           disabled={disabled}
         >
-          Ajouter
+          + Ajouter
         </button>
       </div>
 
-      {list.length === 0 ? (
-        <div className="cb-presence__empty">Aucune dépense aujourd&apos;hui.</div>
+      {expensesForDay.length === 0 ? (
+        <p className="cb-presence__hint">Aucune dépense pour cette journée.</p>
       ) : (
-        <div className="cb-presence__cards">
-          {list.map((e) => (
-            <div key={e.id} className="cb-presence__card">
-              <div>
-                <div className="cb-presence__card-label">{e.label}</div>
-                <div className="cb-presence__muted">{e.date}</div>
+        <div className="cb-presence-expenses__list">
+          {expensesForDay.map((exp) => (
+            <div key={exp.id} className="cb-presence-expenses__item">
+              <div className="cb-presence-expenses__item-content">
+                <span className="cb-presence-expenses__item-label">{exp.label}</span>
+                <span className="cb-presence-expenses__item-amount">
+                  {exp.amount.toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </span>
               </div>
-              <div>
-                <div className="cb-presence__card-value">
-                  {e.amount.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
-                </div>
-                <button
-                  type="button"
-                  className="cb-button cb-button--ghost"
-                  onClick={() => remove(e.id)}
-                  disabled={disabled}
-                >
-                  Supprimer
-                </button>
-              </div>
+              <button
+                type="button"
+                className="cb-button cb-button--ghost"
+                onClick={() => handleRemoveExpense(exp.id)}
+                disabled={disabled}
+              >
+                ✕
+              </button>
             </div>
           ))}
-
-          <div className="cb-presence__card">
-            <span>Total</span>
-            <div className="cb-presence__card-value">
-              {total.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
-            </div>
-          </div>
         </div>
       )}
     </div>
   );
 }
-  

@@ -1,0 +1,62 @@
+.cb-expenses-receipt {
+          border: 1px solid rgba(148, 163, 184, 0.28);
+          background: rgba(248, 250, 252, 0.75);
+          border-radius: 14px;
+          padding: 10px;
+          display: grid;
+          gap: 10px;
+        }
+        .cb-expenses-receipt__meta {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .cb-expenses-receipt__meta strong {
+          font-weight: 1000;
+        }
+        .cb-expenses-receipt__meta span {
+          color: #64748b;
+          font-weight: 800;
+          font-size: 12px;
+        }
+        .cb-expenses-receipt__img {
+          width: 100%;
+          height: auto;
+          border-radius: 12px;
+          border: 1px solid rgba(148, 163, 184, 0.26);
+          background: #fff;
+        }
+        .cb-expenses-form__row--mt {
+  margin-top: 12px;
+}
+
+.cb-expenses-form__row--end {
+  align-items: flex-end;
+}
+
+.cb-expenses-form__field--full {
+  width: 100%;
+}
+
+.cb-expenses-form__hint--mt-sm {
+  margin-top: 8px;
+}
+
+.cb-expenses-form__hint--mt {
+  margin-top: 12px;
+}
+
+.cb-expenses-receipt-wrap {
+  margin-top: 12px;
+}
+
+.cb-expenses-table__meta {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.cb-expenses-chip--mt {
+  margin-top: 6px;
+}
